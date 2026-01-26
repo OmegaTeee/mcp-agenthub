@@ -1,0 +1,74 @@
+[project]
+name = "agenthub-router"
+version = "0.1.0"
+description = "Centralized MCP router with prompt enhancement, caching, and circuit breakers"
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.11"
+authors = [
+    { name = "OmegaTeee" }
+]
+keywords = ["mcp", "model-context-protocol", "router", "ollama", "fastapi"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Framework :: FastAPI",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+
+dependencies = [
+    "fastapi>=0.109.0",
+    "uvicorn[standard]>=0.27.0",
+    "httpx>=0.26.0",
+    "pydantic>=2.5.0",
+    "pydantic-settings>=2.1.0",
+    "jinja2>=3.1.0",
+    "python-multipart>=0.0.6",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.0",
+    "pytest-asyncio>=0.23.0",
+    "pytest-cov>=4.1.0",
+    "ruff>=0.1.0",
+    "mypy>=1.8.0",
+]
+keychain = [
+    "keyring>=24.0.0",
+]
+qdrant = [
+    "qdrant-client>=1.7.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/OmegaTeee/mcp-agenthub"
+Repository = "https://github.com/OmegaTeee/mcp-agenthub"
+Issues = "https://github.com/OmegaTeee/mcp-agenthub/issues"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["router"]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 88
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "W", "UP"]
+ignore = ["E501"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+addopts = "-v"
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+ignore_missing_imports = true

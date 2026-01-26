@@ -300,6 +300,228 @@ pytest tests/ -v
 
 ---
 
+---
+
+## Phase 2.5: Server Management
+
+### Module 11: Server Models
+**Goal**: Define data models for server configuration and status
+
+**Files to create:**
+- [ ] `router/servers/__init__.py`
+- [ ] `router/servers/models.py`
+
+**Tasks:**
+- [ ] Create `ServerTransport` enum: STDIO, HTTP
+- [ ] Create `ServerStatus` enum: STOPPED, STARTING, RUNNING, FAILED, STOPPING
+- [ ] Create `ServerConfig` Pydantic model with fields:
+  - [ ] `name`, `package`, `transport`, `command`, `args`, `env`
+  - [ ] `url` (for HTTP), `auto_start`, `restart_on_failure`
+  - [ ] `max_restarts`, `health_check_interval`, `description`
+- [ ] Create `ProcessInfo` model: `pid`, `status`, `started_at`, `restart_count`, `last_error`
+
+**Test:**
+```python
+from router.servers.models import ServerConfig, ServerTransport
+config = ServerConfig(
+    name="test",
+    package="@test/mcp",
+    transport=ServerTransport.STDIO,
+    command="npx",
+    args=["-y", "@test/mcp"]
+)
+print(config.model_dump())
+```
+
+---
+
+### Module 12: Server Registry
+**Goal**: Load, save, and manage server configurations
+
+**Files to create:**
+- [ ] `router/servers/registry.py`
+
+**Tasks:**
+- [ ] Create `ServerRegistry` class:
+  - [ ] `__init__(config_path: str)`
+  - [ ] `load()` - Load servers from JSON file
+  - [ ] `save()` - Save servers to JSON file
+  - [ ] `get(name: str) -> ServerConfig | None`
+  - [ ] `list_all() -> list[tuple[ServerConfig, ProcessInfo]]`
+  - [ ] `add(config: ServerConfig)`
+  - [ ] `remove(name: str)`
+- [ ] Track `ProcessInfo` for each server in memory
+- [ ] Support both stdio and http transport configs
+
+**Test:**
+```python
+registry = ServerRegistry("configs/mcp-servers.json")
+registry.load()
+for config, info in registry.list_all():
+    print(f"{config.name}: {info.status}")
+```
+
+---
+
+### Module 13: Process Manager
+**Goal**: Spawn and manage MCP server subprocesses
+
+**Files to create:**
+- [ ] `router/servers/process.py`
+
+**Tasks:**
+- [ ] Create `ProcessManager` class:
+  - [ ] `__init__(registry: ServerRegistry)`
+  - [ ] `async start(name: str) -> ProcessInfo`
+  - [ ] `async stop(name: str) -> None`
+  - [ ] `async restart(name: str) -> ProcessInfo`
+  - [ ] `is_running(name: str) -> bool`
+- [ ] Use `asyncio.create_subprocess_exec` for spawning
+- [ ] Set up stdin/stdout/stderr pipes
+- [ ] Store subprocess references for management
+- [ ] Handle graceful shutdown (SIGTERM → wait → SIGKILL)
+
+**Test:**
+```python
+pm = ProcessManager(registry)
+info = await pm.start("sequential-thinking")
+print(f"Started with PID: {info.pid}")
+await asyncio.sleep(2)
+await pm.stop("sequential-thinking")
+```
+
+---
+
+### Module 14: Stdio Bridge
+**Goal**: Bridge HTTP JSON-RPC to stdio JSON-RPC
+
+**Files to create:**
+- [ ] `router/servers/bridge.py`
+
+**Tasks:**
+- [ ] Create `StdioBridge` class:
+  - [ ] `__init__(process: asyncio.subprocess.Process)`
+  - [ ] `async send(method: str, params: dict) -> dict`
+  - [ ] `async close()`
+- [ ] Implement JSON-RPC message framing (newline-delimited JSON)
+- [ ] Track request IDs and match responses
+- [ ] Handle concurrent requests with asyncio.Lock or queue
+- [ ] Implement read loop as background task
+
+**Test:**
+```python
+bridge = StdioBridge(process)
+result = await bridge.send("tools/list", {})
+print(f"Available tools: {result}")
+```
+
+---
+
+### Module 15: Supervisor
+**Goal**: Monitor server health and handle auto-restart
+
+**Files to create:**
+- [ ] `router/servers/supervisor.py`
+
+**Tasks:**
+- [ ] Create `Supervisor` class:
+  - [ ] `__init__(registry, process_manager)`
+  - [ ] `async start()` - Start supervisor background task
+  - [ ] `async stop()` - Stop supervisor and all servers
+  - [ ] `async start_all_auto()` - Start servers with auto_start=true
+- [ ] Implement health check loop:
+  - [ ] Check if process is alive (poll())
+  - [ ] If dead and restart_on_failure, restart
+  - [ ] Track restart_count, respect max_restarts
+  - [ ] Mark as FAILED if max exceeded
+- [ ] Log all state transitions
+
+**Test:**
+```python
+supervisor = Supervisor(registry, pm)
+await supervisor.start()
+# Kill a process externally, watch it restart
+await asyncio.sleep(60)
+await supervisor.stop()
+```
+
+---
+
+### Module 16: Server Management Endpoints
+**Goal**: Add REST API for server management
+
+**Files to update:**
+- [ ] `router/main.py`
+
+**Tasks:**
+- [ ] Add endpoints:
+  - [ ] `GET /servers` - List all servers with status
+  - [ ] `GET /servers/{name}` - Get server details
+  - [ ] `POST /servers/{name}/start` - Start a server
+  - [ ] `POST /servers/{name}/stop` - Stop a server
+  - [ ] `POST /servers/{name}/restart` - Restart a server
+  - [ ] `POST /servers/install` - Install new MCP package
+  - [ ] `DELETE /servers/{name}` - Remove server from config
+- [ ] Initialize Supervisor in app lifespan
+- [ ] Update `/health` to include server statuses
+- [ ] Update MCP proxy to use StdioBridge for stdio servers
+
+**Test:**
+```bash
+# List servers
+curl http://localhost:9090/servers
+
+# Start a server
+curl -X POST http://localhost:9090/servers/context7/start
+
+# Check status
+curl http://localhost:9090/servers/context7
+
+# Stop a server
+curl -X POST http://localhost:9090/servers/context7/stop
+```
+
+---
+
+### Module 17: npm/npx Installer
+**Goal**: Install MCP packages via npm
+
+**Files to create:**
+- [ ] `router/servers/installer.py`
+
+**Tasks:**
+- [ ] Create `Installer` class:
+  - [ ] `async install(package: str) -> bool`
+  - [ ] `async is_installed(package: str) -> bool`
+  - [ ] `get_npx_path() -> str`
+- [ ] Run `npm install` or rely on `npx -y` for auto-install
+- [ ] Handle errors (npm not found, package not found)
+- [ ] Support global vs local installation
+
+**Test:**
+```python
+installer = Installer()
+success = await installer.install("@modelcontextprotocol/server-memory")
+print(f"Installed: {success}")
+```
+
+---
+
+## Phase 2.5 Completion Checklist
+
+Before moving to Phase 3, verify:
+
+- [ ] `GET /servers` returns list of configured servers
+- [ ] `POST /servers/{name}/start` starts a stopped server
+- [ ] `POST /servers/{name}/stop` stops a running server
+- [ ] Server auto-starts when `auto_start: true`
+- [ ] Server auto-restarts when crashed (if `restart_on_failure: true`)
+- [ ] Server marked FAILED after `max_restarts` exceeded
+- [ ] MCP proxy works with stdio servers via StdioBridge
+- [ ] `POST /servers/install` installs new packages
+
+---
+
 ## Phase 2 Completion Checklist
 
 Before moving to Phase 3, verify:
@@ -394,13 +616,22 @@ Phase 2 (MVP):
   9. Docker             → Deployment
   10. Tests             → Quality assurance
 
+Phase 2.5 (Server Management):
+  11. Server Models     → Data structures
+  12. Server Registry   → Config management
+  13. Process Manager   → Subprocess lifecycle
+  14. Stdio Bridge      → Protocol bridging
+  15. Supervisor        → Health + auto-restart
+  16. Management API    → REST endpoints
+  17. Installer         → npm package management
+
 Phase 3 (Integration):
-  11. Client Configs    → Connect apps
-  12. Pipelines         → Workflow automation
+  18. Client Configs    → Connect apps
+  19. Pipelines         → Workflow automation
 
 Phase 4 (Dashboard):
-  13. Dashboard Backend → Stats API
-  14. Dashboard Frontend→ Visual UI
+  20. Dashboard Backend → Stats API
+  21. Dashboard Frontend→ Visual UI
 ```
 
 ---
@@ -425,3 +656,9 @@ Phase 4 (Dashboard):
 | Docker network issues | Use `host.docker.internal` for Ollama |
 | Config not loading | Check file paths are relative to working dir |
 | Circuit breaker stuck OPEN | Wait for recovery_timeout (30s) |
+| npx not found | Install Node.js 20+ |
+| Server won't start | Check `args` array in config, verify package exists |
+| Server crashes immediately | Check stderr logs, may need env vars |
+| Stdio bridge hangs | Ensure MCP server sends newline after JSON |
+| Max restarts exceeded | Reset restart_count or increase max_restarts |
+| Process zombie | Use `pkill -f` to clean up orphaned processes |

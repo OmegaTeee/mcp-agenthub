@@ -1,0 +1,64 @@
+{
+  "servers": {
+    "context7": {
+      "package": "@upstash/context7-mcp",
+      "transport": "stdio",
+      "command": "npx",
+      "args": ["-y", "@upstash/context7-mcp"],
+      "env": {},
+      "auto_start": true,
+      "restart_on_failure": true,
+      "max_restarts": 3,
+      "health_check_interval": 30,
+      "description": "Documentation fetching from libraries"
+    },
+    "desktop-commander": {
+      "package": "@wonderwhy-er/desktop-commander",
+      "transport": "stdio",
+      "command": "npx",
+      "args": ["-y", "@wonderwhy-er/desktop-commander"],
+      "env": {},
+      "auto_start": true,
+      "restart_on_failure": true,
+      "max_restarts": 3,
+      "health_check_interval": 30,
+      "description": "File operations and terminal commands"
+    },
+    "sequential-thinking": {
+      "package": "@modelcontextprotocol/server-sequential-thinking",
+      "transport": "stdio",
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-sequential-thinking"],
+      "env": {},
+      "auto_start": true,
+      "restart_on_failure": true,
+      "max_restarts": 3,
+      "health_check_interval": 30,
+      "description": "Step-by-step reasoning and planning"
+    },
+    "memory": {
+      "package": "@modelcontextprotocol/server-memory",
+      "transport": "stdio",
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-memory"],
+      "env": {},
+      "auto_start": false,
+      "restart_on_failure": true,
+      "max_restarts": 3,
+      "health_check_interval": 30,
+      "description": "Cross-session context persistence"
+    },
+    "deepseek-reasoner": {
+      "package": "deepseek-reasoner-mcp",
+      "transport": "stdio",
+      "command": "npx",
+      "args": ["-y", "deepseek-reasoner-mcp"],
+      "env": {},
+      "auto_start": false,
+      "restart_on_failure": true,
+      "max_restarts": 3,
+      "health_check_interval": 30,
+      "description": "Local reasoning without API costs"
+    }
+  }
+}

@@ -1,0 +1,21 @@
+# Core dependencies
+fastapi>=0.109.0
+uvicorn[standard]>=0.27.0
+httpx>=0.26.0
+pydantic>=2.5.0
+pydantic-settings>=2.1.0
+jinja2>=3.1.0
+python-multipart>=0.0.6
+
+# Development (uncomment for dev environment)
+# pytest>=7.4.0
+# pytest-asyncio>=0.23.0
+# pytest-cov>=4.1.0
+# ruff>=0.1.0
+# mypy>=1.8.0
+
+# Optional: Keychain integration
+# keyring>=24.0.0
+
+# Optional: Vector cache (Phase 2.1)
+# qdrant-client>=1.7.0
