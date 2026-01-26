@@ -19,6 +19,13 @@ from pydantic import BaseModel
 
 from router.config import Settings, get_settings
 from router.enhancement import EnhancementService
+from router.clients import (
+    generate_claude_desktop_config,
+    generate_raycast_script,
+    generate_vscode_config,
+    generate_vscode_tasks,
+)
+from router.pipelines import DocumentationPipeline
 from router.resilience import CircuitBreakerError, CircuitBreakerRegistry
 from router.servers import (
     ProcessManager,
@@ -42,12 +49,13 @@ process_manager: ProcessManager | None = None
 supervisor: Supervisor | None = None
 enhancement_service: EnhancementService | None = None
 circuit_breakers: CircuitBreakerRegistry | None = None
+documentation_pipeline: DocumentationPipeline | None = None
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan handler for startup/shutdown."""
-    global registry, process_manager, supervisor, enhancement_service, circuit_breakers
+    global registry, process_manager, supervisor, enhancement_service, circuit_breakers, documentation_pipeline
 
     # Startup
     settings = get_settings()
@@ -73,6 +81,12 @@ async def lifespan(app: FastAPI):
         cache_ttl=7200.0,
     )
     await enhancement_service.initialize()
+
+    # Initialize documentation pipeline
+    documentation_pipeline = DocumentationPipeline(
+        enhancement_service=enhancement_service,
+        supervisor=supervisor,
+    )
 
     yield
 
@@ -532,6 +546,92 @@ async def reset_circuit_breaker(name: str):
     if circuit_breakers.reset(name):
         return {"message": f"Circuit breaker {name} reset"}
     raise HTTPException(404, f"Circuit breaker {name} not found")
+
+
+# =============================================================================
+# Pipeline Endpoints
+# =============================================================================
+
+
+class DocumentationRequest(BaseModel):
+    """Request body for documentation generation."""
+
+    repo_path: str
+    project_name: str
+    vault_path: str | None = None
+    include_structure: bool = True
+
+
+@app.post("/pipelines/documentation")
+async def run_documentation_pipeline(request: DocumentationRequest):
+    """
+    Generate documentation for a codebase.
+
+    This pipeline:
+    1. Creates a documentation prompt from the repo path
+    2. Enhances it with Ollama (deepseek-r1)
+    3. Optionally structures with Sequential Thinking
+    4. Writes to Obsidian vault with Desktop Commander
+    """
+    if not documentation_pipeline:
+        raise HTTPException(503, "Documentation pipeline not initialized")
+
+    result = await documentation_pipeline.run(
+        repo_path=request.repo_path,
+        project_name=request.project_name,
+        vault_path=request.vault_path,
+        include_structure=request.include_structure,
+    )
+
+    return result.model_dump()
+
+
+# =============================================================================
+# Client Configuration Endpoints
+# =============================================================================
+
+
+@app.get("/configs/claude-desktop")
+async def get_claude_desktop_config():
+    """Generate Claude Desktop configuration for AgentHub."""
+    settings = get_settings()
+    return generate_claude_desktop_config(
+        router_host="localhost",
+        router_port=settings.port,
+    )
+
+
+@app.get("/configs/vscode")
+async def get_vscode_config():
+    """Generate VS Code MCP configuration for AgentHub."""
+    settings = get_settings()
+    return generate_vscode_config(
+        router_host="localhost",
+        router_port=settings.port,
+    )
+
+
+@app.get("/configs/vscode-tasks")
+async def get_vscode_tasks():
+    """Generate VS Code tasks.json for AgentHub pipelines."""
+    settings = get_settings()
+    return generate_vscode_tasks(
+        router_host="localhost",
+        router_port=settings.port,
+    )
+
+
+@app.get("/configs/raycast")
+async def get_raycast_script():
+    """Generate Raycast script for MCP queries."""
+    from fastapi.responses import PlainTextResponse
+
+    settings = get_settings()
+    script = generate_raycast_script(
+        router_host="localhost",
+        router_port=settings.port,
+    )
+    return PlainTextResponse(content=script, media_type="text/plain")
 
 
 # =============================================================================
