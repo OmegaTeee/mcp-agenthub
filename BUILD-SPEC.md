@@ -25,29 +25,29 @@ AgentHub is a centralized MCP (Model Context Protocol) hub that:
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                    AgentHub Router                           │
+│                    AgentHub Router                          │
 ├─────────────────────────────────────────────────────────────┤
-│  config/          Load & validate JSON configs (Pydantic)    │
-│  secrets/         macOS Keychain integration                 │
-│  servers/         MCP server lifecycle management (NEW)      │
-│  routing/         MCP server registry & proxy logic          │
-│  resilience/      Circuit breaker pattern                    │
-│  cache/           L1 (memory) + L2 (optional Qdrant)         │
-│  enhancement/     Ollama prompt enhancement                  │
-│  pipelines/       Workflow orchestration (Phase 3)           │
-│  dashboard/       HTMX observability UI (Phase 4)            │
+│  config/          Load & validate JSON configs (Pydantic)   │
+│  secrets/         macOS Keychain integration                │
+│  servers/         MCP server lifecycle management (NEW)     │
+│  routing/         MCP server registry & proxy logic         │
+│  resilience/      Circuit breaker pattern                   │
+│  cache/           L1 (memory) + L2 (optional Qdrant)        │
+│  enhancement/     Ollama prompt enhancement                 │
+│  pipelines/       Workflow orchestration (Phase 3)          │
+│  dashboard/       HTMX observability UI (Phase 4)           │
 └─────────────────────────────────────────────────────────────┘
          │
          │ Manages
          ▼
 ┌─────────────────────────────────────────────────────────────┐
-│                    MCP Server Processes                      │
+│                    MCP Server Processes                     │
 ├─────────────────────────────────────────────────────────────┤
-│  context7          (stdio)  Auto-started, supervised         │
-│  desktop-commander (stdio)  Auto-started, supervised         │
-│  sequential-thinking (stdio) Auto-started, supervised        │
-│  memory            (stdio)  Auto-started, supervised         │
-│  [custom servers]  (stdio)  User-configured                  │
+│  context7          (stdio)  Auto-started, supervised        │
+│  desktop-commander (stdio)  Auto-started, supervised        │
+│  sequential-thinking (stdio) Auto-started, supervised       │
+│  memory            (stdio)  Auto-started, supervised        │
+│  [custom servers]  (stdio)  User-configured                 │
 └─────────────────────────────────────────────────────────────┘
 ```
 

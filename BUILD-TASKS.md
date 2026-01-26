@@ -297,9 +297,6 @@ curl -X POST http://localhost:9090/ollama/enhance \
 pip install pytest pytest-asyncio
 pytest tests/ -v
 ```
-
----
-
 ---
 
 ## Phase 2.5: Server Management

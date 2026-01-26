@@ -5,7 +5,20 @@
       "WebFetch(domain:www.npmjs.com)",
       "mcp__desktop-commander__list_directory",
       "Bash(find:*)",
-      "Bash(git branch:*)"
+      "Bash(git branch:*)",
+      "Bash(python3:*)",
+      "Bash(source:*)",
+      "Bash(pip install:*)",
+      "Bash(python:*)",
+      "Bash(timeout 5 uvicorn:*)",
+      "Bash(pkill:*)",
+      "Bash(curl:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(ls:*)",
+      "Bash(lsof:*)",
+      "Bash(xargs kill -9)"
     ]
   },
   "enableAllProjectMcpServers": true,

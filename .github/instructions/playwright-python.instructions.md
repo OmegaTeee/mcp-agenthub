@@ -1,1 +1,0 @@
-/Users/visualval/Public/Code/ai.instructions/awesome-copilot/instructions/playwright-python.instructions.md

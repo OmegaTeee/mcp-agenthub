@@ -1,1 +1,0 @@
-/Users/visualval/Public/Code/ai.instructions/awesome-copilot/instructions/typescript-5-es2022.instructions.md
