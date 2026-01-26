@@ -18,6 +18,9 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
 ]
 
+# Note: MCP servers require Node.js 20+ and npm
+# Install MCPs with: cd mcps && npm install
+
 dependencies = [
     "fastapi>=0.109.0",
     "uvicorn[standard]>=0.27.0",

@@ -16,14 +16,16 @@ AgentHub provides a single local router (`localhost:9090`) that:
 
 | Phase | Status | Description |
 |-------|--------|-------------|
-| Phase 2 | **In Progress** | Core router MVP |
-| Phase 3 | Planned | Desktop integration |
-| Phase 4 | Planned | Dashboard (optional) |
+| Phase 2 | **Complete** | Core router, caching, circuit breakers, Ollama enhancement |
+| Phase 2.5 | **Complete** | MCP server management, stdio bridges |
+| Phase 3 | **Complete** | Desktop integration, config generators, documentation pipeline |
+| Phase 4 | **Complete** | HTMX dashboard with real-time monitoring |
 
 ## Quick Start
 
 ### Prerequisites
 - Python 3.11+
+- Node.js 20+ (for MCP servers)
 - Docker Desktop or Colima
 - Ollama running locally (`ollama serve`)
 
@@ -32,8 +34,11 @@ AgentHub provides a single local router (`localhost:9090`) that:
 # Create virtual environment
 python -m venv .venv && source .venv/bin/activate
 
-# Install dependencies
+# Install Python dependencies
 pip install -r requirements.txt
+
+# Install MCP servers (Node.js packages)
+cd mcps && npm install && cd ..
 
 # Run router (once built)
 uvicorn router.main:app --reload --port 9090
@@ -54,9 +59,12 @@ curl http://localhost:9090/health
 agenthub/
 ├── BUILD-SPEC.md           # Consolidated build specification (START HERE)
 ├── BUILD-TASKS.md          # Step-by-step build checklist
-├── router/                 # Python FastAPI application (to be built)
+├── mcps/                   # Centralized MCP (Model Context Protocol) servers
+│   ├── package.json        # npm dependencies for all 6 MCP servers
+│   └── node_modules/       # Installed packages (gitignored)
+├── router/                 # Python FastAPI application
 ├── configs/                # Runtime configuration
-│   ├── mcp-servers.json    # MCP server registry
+│   ├── mcp-servers.json    # MCP server registry (points to mcps/node_modules)
 │   └── enhancement-rules.json
 ├── scripts/                # Shell utilities
 ├── templates/              # Jinja2 templates for dashboard
@@ -91,8 +99,9 @@ Original phase documentation is preserved in `reference/docs/` for additional co
 ### Prompt Enhancement
 Each client (Claude, VS Code, Raycast) gets customized prompt enhancement:
 - **Claude Desktop**: deepseek-r1 for structured reasoning
-- **VS Code**: qwen2.5-coder for code-focused responses
-- **Raycast**: llama3.2 for fast, action-oriented responses
+- **VS Code / Claude Code**: qwen3-coder for code-focused responses
+- **Raycast**: deepseek-r1 for action-oriented responses
+- **Obsidian**: deepseek-r1 with Markdown formatting
 
 ### Circuit Breakers
 If an MCP server fails:
@@ -104,6 +113,39 @@ If an MCP server fails:
 ### Caching
 - **L1**: Exact match (SHA256 hash) - instant response
 - **L2**: Semantic similarity (Phase 2.1) - similar prompts hit cache
+
+## Dashboard
+
+Access the monitoring dashboard at:
+```
+http://localhost:9090/dashboard
+```
+
+Features:
+- Service health status (auto-refresh every 5s)
+- Cache stats and Ollama status (auto-refresh every 10s)
+- Recent request activity (auto-refresh every 3s)
+- Quick actions: clear cache, restart servers
+
+## MCP Servers
+
+AgentHub manages 6 MCP servers from `mcps/node_modules/`:
+
+| Server | Package | Auto-Start | Description |
+|--------|---------|------------|-------------|
+| context7 | @upstash/context7-mcp | Yes | Documentation fetching |
+| desktop-commander | @wonderwhy-er/desktop-commander | Yes | File operations |
+| sequential-thinking | @modelcontextprotocol/server-sequential-thinking | Yes | Step-by-step reasoning |
+| memory | @modelcontextprotocol/server-memory | No | Cross-session persistence |
+| deepseek-reasoner | deepseek-reasoner-mcp | No | Local reasoning |
+| fetch | mcp-fetch | No | HTTP fetch, GraphQL |
+
+### Adding/Updating MCPs
+```bash
+cd mcps
+npm install <package-name>
+# Update configs/mcp-servers.json with the new server
+```
 
 ## Configuration
 

@@ -3,8 +3,8 @@
     "context7": {
       "package": "@upstash/context7-mcp",
       "transport": "stdio",
-      "command": "npx",
-      "args": ["-y", "@upstash/context7-mcp"],
+      "command": "node",
+      "args": ["./mcps/node_modules/@upstash/context7-mcp/dist/index.js"],
       "env": {},
       "auto_start": true,
       "restart_on_failure": true,
@@ -15,8 +15,8 @@
     "desktop-commander": {
       "package": "@wonderwhy-er/desktop-commander",
       "transport": "stdio",
-      "command": "npx",
-      "args": ["-y", "@wonderwhy-er/desktop-commander"],
+      "command": "node",
+      "args": ["./mcps/node_modules/@wonderwhy-er/desktop-commander/dist/index.js"],
       "env": {},
       "auto_start": true,
       "restart_on_failure": true,
@@ -27,8 +27,8 @@
     "sequential-thinking": {
       "package": "@modelcontextprotocol/server-sequential-thinking",
       "transport": "stdio",
-      "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-sequential-thinking"],
+      "command": "node",
+      "args": ["./mcps/node_modules/@modelcontextprotocol/server-sequential-thinking/dist/index.js"],
       "env": {},
       "auto_start": true,
       "restart_on_failure": true,
@@ -39,8 +39,8 @@
     "memory": {
       "package": "@modelcontextprotocol/server-memory",
       "transport": "stdio",
-      "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-memory"],
+      "command": "node",
+      "args": ["./mcps/node_modules/@modelcontextprotocol/server-memory/dist/index.js"],
       "env": {},
       "auto_start": false,
       "restart_on_failure": true,
@@ -51,8 +51,8 @@
     "deepseek-reasoner": {
       "package": "deepseek-reasoner-mcp",
       "transport": "stdio",
-      "command": "npx",
-      "args": ["-y", "deepseek-reasoner-mcp"],
+      "command": "node",
+      "args": ["./mcps/node_modules/deepseek-reasoner-mcp/dist/index.js"],
       "env": {},
       "auto_start": false,
       "restart_on_failure": true,
@@ -61,16 +61,16 @@
       "description": "Local reasoning without API costs"
     },
     "fetch": {
-      "package": "@modelcontextprotocol/server-fetch",
+      "package": "mcp-fetch",
       "transport": "stdio",
-      "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-fetch"],
+      "command": "node",
+      "args": ["./mcps/node_modules/mcp-fetch/dist/stdio.js"],
       "env": {},
       "auto_start": false,
       "restart_on_failure": true,
       "max_restarts": 3,
       "health_check_interval": 30,
-      "description": "HTTP fetch capabilities for web content retrieval"
+      "description": "HTTP fetch capabilities for web content retrieval, GraphQL queries, WebSocket connections, and browser automation"
     }
   }
 }
