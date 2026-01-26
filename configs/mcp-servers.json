@@ -59,6 +59,18 @@
       "max_restarts": 3,
       "health_check_interval": 30,
       "description": "Local reasoning without API costs"
+    },
+    "fetch": {
+      "package": "@modelcontextprotocol/server-fetch",
+      "transport": "stdio",
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-fetch"],
+      "env": {},
+      "auto_start": false,
+      "restart_on_failure": true,
+      "max_restarts": 3,
+      "health_check_interval": 30,
+      "description": "HTTP fetch capabilities for web content retrieval"
     }
   }
 }
