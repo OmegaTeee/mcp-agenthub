@@ -18,7 +18,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 from router.config import Settings, get_settings
+from router.dashboard import create_dashboard_router
 from router.enhancement import EnhancementService
+from router.middleware import ActivityLoggingMiddleware
 from router.clients import (
     generate_claude_desktop_config,
     generate_raycast_script,
@@ -115,6 +117,74 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Activity logging middleware for dashboard
+app.add_middleware(ActivityLoggingMiddleware)
+
+
+# =============================================================================
+# Dashboard Helper Functions
+# =============================================================================
+
+
+def _get_health():
+    """Get health status for dashboard."""
+    return supervisor.get_status_summary() if supervisor else {}
+
+
+async def _get_stats():
+    """Get enhancement stats for dashboard."""
+    if enhancement_service:
+        return await enhancement_service.get_stats()
+    return {}
+
+
+def _get_servers():
+    """Get server statuses for dashboard."""
+    if not supervisor or not registry:
+        return {"servers": {}}
+
+    servers = {}
+    for name in registry._servers.keys():
+        info = registry.get_process_info(name)
+        servers[name] = {
+            "status": info.status.value if info else "unknown",
+            "pid": info.pid if info else None,
+            "restart_count": info.restart_count if info else 0,
+        }
+    return {"servers": servers}
+
+
+async def _clear_cache():
+    """Clear enhancement cache for dashboard."""
+    if enhancement_service:
+        await enhancement_service.clear_cache()
+
+
+async def _restart_server(name: str):
+    """Restart a server for dashboard."""
+    if not supervisor:
+        raise ValueError("Supervisor not initialized")
+    await supervisor.restart_server(name)
+
+
+def _get_circuit_breakers():
+    """Get circuit breaker states for dashboard."""
+    if circuit_breakers:
+        return circuit_breakers.get_all_stats()
+    return {}
+
+
+# Register dashboard router
+dashboard_router = create_dashboard_router(
+    get_health=_get_health,
+    get_stats=_get_stats,
+    get_servers=_get_servers,
+    clear_cache=_clear_cache,
+    restart_server=_restart_server,
+    get_circuit_breakers=_get_circuit_breakers,
+)
+app.include_router(dashboard_router)
 
 
 # =============================================================================
