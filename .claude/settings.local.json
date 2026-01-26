@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:www.npmjs.com)",
+      "mcp__desktop-commander__list_directory",
+      "Bash(find:*)",
+      "Bash(git branch:*)"
+    ]
+  },
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": [
+    "fetch",
+    "desktop-commander",
+    "sequential-thinking",
+    "deepseek-reasoner",
+    "skills-mcp",
+    "context7",
+    "obsidian",
+    "obsidian-mcp-tools"
+  ]
+}
