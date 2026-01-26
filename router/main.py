@@ -13,11 +13,13 @@ import logging
 from contextlib import asynccontextmanager
 from typing import Any
 
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, Header, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 from router.config import Settings, get_settings
+from router.enhancement import EnhancementService
+from router.resilience import CircuitBreakerError, CircuitBreakerRegistry
 from router.servers import (
     ProcessManager,
     ServerConfig,
@@ -38,12 +40,14 @@ logger = logging.getLogger(__name__)
 registry: ServerRegistry | None = None
 process_manager: ProcessManager | None = None
 supervisor: Supervisor | None = None
+enhancement_service: EnhancementService | None = None
+circuit_breakers: CircuitBreakerRegistry | None = None
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan handler for startup/shutdown."""
-    global registry, process_manager, supervisor
+    global registry, process_manager, supervisor, enhancement_service, circuit_breakers
 
     # Startup
     settings = get_settings()
@@ -59,16 +63,24 @@ async def lifespan(app: FastAPI):
     # Start supervisor (will auto-start configured servers)
     await supervisor.start()
 
-    # TODO: Initialize other services
-    # - Cache
-    # - CircuitBreakerRegistry
-    # - OllamaClient
-    # - EnhancementService
+    # Initialize circuit breaker registry
+    circuit_breakers = CircuitBreakerRegistry()
+
+    # Initialize enhancement service
+    enhancement_service = EnhancementService(
+        rules_path=settings.enhancement_rules_config,
+        cache_max_size=500,
+        cache_ttl=7200.0,
+    )
+    await enhancement_service.initialize()
 
     yield
 
     # Shutdown
     logger.info("Shutting down AgentHub Router")
+
+    if enhancement_service:
+        await enhancement_service.close()
 
     if supervisor:
         await supervisor.stop()
@@ -101,12 +113,29 @@ async def health_check():
     """Health check endpoint - returns status of all services."""
     server_summary = supervisor.get_status_summary() if supervisor else {}
 
+    # Check Ollama status
+    ollama_status = "unknown"
+    if enhancement_service:
+        stats = await enhancement_service.get_stats()
+        ollama_status = "up" if stats.get("ollama_healthy") else "down"
+
+    # Get cache stats
+    cache_stats = {}
+    if enhancement_service:
+        stats = await enhancement_service.get_stats()
+        cache_stats = stats.get("cache", {})
+
     return {
         "status": "healthy",
         "services": {
             "router": "up",
-            "ollama": "unknown",  # TODO: Check Ollama connection
-            "cache": "up",
+            "ollama": ollama_status,
+            "cache": {
+                "status": "up",
+                "hit_rate": cache_stats.get("hits", 0)
+                / max(1, cache_stats.get("hits", 0) + cache_stats.get("misses", 0)),
+                "size": cache_stats.get("size", 0),
+            },
         },
         "servers": server_summary,
     }
@@ -122,12 +151,19 @@ async def server_health(server: str):
     if not state:
         raise HTTPException(404, f"Server {server} not found")
 
+    # Get circuit breaker stats for this server
+    cb_stats = None
+    if circuit_breakers:
+        breaker = circuit_breakers.get(server)
+        cb_stats = breaker.stats.model_dump()
+
     return {
         "server": server,
         "status": state.process.status.value,
         "pid": state.process.pid,
         "restart_count": state.process.restart_count,
         "last_error": state.process.last_error,
+        "circuit_breaker": cb_stats,
         "config": {
             "package": state.config.package,
             "transport": state.config.transport.value,
@@ -198,6 +234,9 @@ async def start_server(name: str):
 
     try:
         await supervisor.start_server(name)
+        # Reset circuit breaker on manual start
+        if circuit_breakers:
+            circuit_breakers.reset(name)
         return {"message": f"Server {name} started", "status": "running"}
     except Exception as e:
         logger.error(f"Failed to start {name}: {e}")
@@ -238,6 +277,9 @@ async def restart_server(name: str):
 
     try:
         await supervisor.restart_server(name)
+        # Reset circuit breaker on restart
+        if circuit_breakers:
+            circuit_breakers.reset(name)
         return {"message": f"Server {name} restarted", "status": "running"}
     except Exception as e:
         logger.error(f"Failed to restart {name}: {e}")
@@ -327,13 +369,28 @@ async def mcp_proxy(server: str, path: str, request: Request):
         server: Target MCP server name (e.g., "context7")
         path: MCP endpoint path (e.g., "tools/call")
     """
-    if not supervisor or not registry:
+    if not supervisor or not registry or not circuit_breakers:
         raise HTTPException(503, "Services not initialized")
 
     # Get server config
     config = registry.get(server)
     if not config:
         raise HTTPException(404, f"Server {server} not found")
+
+    # Check circuit breaker
+    breaker = circuit_breakers.get(server)
+    try:
+        breaker.check()
+    except CircuitBreakerError as e:
+        return {
+            "jsonrpc": "2.0",
+            "error": {
+                "code": -32603,
+                "message": f"Server {server} circuit breaker open",
+                "data": {"retry_after": e.retry_after},
+            },
+            "id": None,
+        }
 
     # Check server status
     info = registry.get_process_info(server)
@@ -343,6 +400,7 @@ async def mcp_proxy(server: str, path: str, request: Request):
             try:
                 await supervisor.start_server(server)
             except Exception as e:
+                breaker.record_failure(e)
                 raise HTTPException(503, f"Failed to auto-start server: {e}")
         else:
             raise HTTPException(503, f"Server {server} is not running")
@@ -364,9 +422,11 @@ async def mcp_proxy(server: str, path: str, request: Request):
         params = body.get("params", {})
 
         response = await bridge.send(method, params)
+        breaker.record_success()
         return response
 
     except Exception as e:
+        breaker.record_failure(e)
         logger.error(f"MCP proxy error for {server}/{path}: {e}")
         return {
             "jsonrpc": "2.0",
@@ -380,8 +440,18 @@ async def mcp_proxy(server: str, path: str, request: Request):
 # =============================================================================
 
 
+class EnhanceRequest(BaseModel):
+    """Request body for prompt enhancement."""
+
+    prompt: str
+    bypass_cache: bool = False
+
+
 @app.post("/ollama/enhance")
-async def enhance_prompt(body: dict):
+async def enhance_prompt(
+    body: EnhanceRequest,
+    x_client_name: str | None = Header(None, alias="X-Client-Name"),
+):
     """
     Enhance a prompt via Ollama.
 
@@ -390,22 +460,78 @@ async def enhance_prompt(body: dict):
 
     Body:
         prompt: The prompt to enhance
-    """
-    prompt = body.get("prompt", "")
+        bypass_cache: Skip cache lookup (default: false)
 
-    # TODO: Implement actual enhancement
-    # 1. Get client name from header
-    # 2. Look up enhancement rules
-    # 3. Check cache
-    # 4. Call Ollama
-    # 5. Cache result
+    Returns:
+        original: The original prompt
+        enhanced: The enhanced prompt (or original if enhancement failed)
+        model: The model used for enhancement
+        cached: Whether the result came from cache
+        error: Error message if enhancement failed
+    """
+    if not enhancement_service:
+        raise HTTPException(503, "Enhancement service not initialized")
+
+    result = await enhancement_service.enhance(
+        prompt=body.prompt,
+        client_name=x_client_name,
+        bypass_cache=body.bypass_cache,
+    )
 
     return {
-        "original": prompt,
-        "enhanced": prompt,  # TODO: Return actually enhanced prompt
-        "model": "not-configured",
-        "cached": False,
+        "original": result.original,
+        "enhanced": result.enhanced,
+        "model": result.model,
+        "cached": result.cached,
+        "was_enhanced": result.was_enhanced,
+        "error": result.error,
     }
+
+
+@app.get("/ollama/stats")
+async def enhancement_stats():
+    """Get enhancement service statistics."""
+    if not enhancement_service:
+        raise HTTPException(503, "Enhancement service not initialized")
+
+    return await enhancement_service.get_stats()
+
+
+@app.post("/ollama/reset")
+async def reset_enhancement():
+    """Reset enhancement service (clear cache and circuit breaker)."""
+    if not enhancement_service:
+        raise HTTPException(503, "Enhancement service not initialized")
+
+    await enhancement_service.clear_cache()
+    await enhancement_service.reset_circuit_breaker()
+
+    return {"message": "Enhancement service reset"}
+
+
+# =============================================================================
+# Circuit Breaker Endpoints
+# =============================================================================
+
+
+@app.get("/circuit-breakers")
+async def list_circuit_breakers():
+    """Get all circuit breaker states."""
+    if not circuit_breakers:
+        raise HTTPException(503, "Circuit breakers not initialized")
+
+    return circuit_breakers.get_all_stats()
+
+
+@app.post("/circuit-breakers/{name}/reset")
+async def reset_circuit_breaker(name: str):
+    """Reset a specific circuit breaker."""
+    if not circuit_breakers:
+        raise HTTPException(503, "Circuit breakers not initialized")
+
+    if circuit_breakers.reset(name):
+        return {"message": f"Circuit breaker {name} reset"}
+    raise HTTPException(404, f"Circuit breaker {name} not found")
 
 
 # =============================================================================

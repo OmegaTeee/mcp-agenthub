@@ -1,30 +1,30 @@
 {
   "default": {
     "enabled": true,
-    "model": "llama3.2:3b",
+    "model": "deepseek-r1:latest",
     "system_prompt": "Improve clarity and structure. Preserve intent. Return only the enhanced prompt."
   },
   "clients": {
     "claude-desktop": {
-      "model": "deepseek-r1:14b",
+      "model": "deepseek-r1:latest",
       "system_prompt": "Provide structured responses with clear reasoning. Use Markdown."
     },
     "claude-code": {
-      "model": "qwen2.5-coder:7b",
+      "model": "qwen3-coder:latest",
       "system_prompt": "Code-first responses. Include file paths. Minimal prose."
     },
     "vscode": {
-      "model": "qwen2.5-coder:7b",
+      "model": "qwen3-coder:latest",
       "system_prompt": "Code-first responses. Include file paths. Minimal prose."
     },
     "raycast": {
-      "model": "llama3.2:3b",
+      "model": "deepseek-r1:latest",
       "system_prompt": "Action-oriented. Suggest CLI commands. Under 200 words."
     },
     "obsidian": {
-      "model": "llama3.2:3b",
+      "model": "deepseek-r1:latest",
       "system_prompt": "Format in Markdown. Use [[wikilinks]] and #tags."
     }
   },
-  "fallback_chain": ["phi3:mini", null]
+  "fallback_chain": ["deepseek-r1:latest", null]
 }
