@@ -16,23 +16,32 @@
                 class="btn btn-sm btn-warning"
                 hx-post="/dashboard/actions/stop/{{ service.name }}"
                 hx-swap="none"
+                hx-disabled-elt="this"
+                hx-indicator="#spinner-stop-{{ service.name }}"
                 hx-on::after-request="setTimeout(() => htmx.trigger('#health-section', 'load'), 500)">
                 Stop
+                <span id="spinner-stop-{{ service.name }}" class="htmx-indicator spinner"></span>
             </button>
             <button
                 class="btn btn-sm btn-secondary"
                 hx-post="/dashboard/actions/restart/{{ service.name }}"
                 hx-swap="none"
+                hx-disabled-elt="this"
+                hx-indicator="#spinner-restart-{{ service.name }}"
                 hx-on::after-request="setTimeout(() => htmx.trigger('#health-section', 'load'), 500)">
                 Restart
+                <span id="spinner-restart-{{ service.name }}" class="htmx-indicator spinner"></span>
             </button>
             {% else %}
             <button
                 class="btn btn-sm btn-success"
                 hx-post="/dashboard/actions/start/{{ service.name }}"
                 hx-swap="none"
+                hx-disabled-elt="this"
+                hx-indicator="#spinner-start-{{ service.name }}"
                 hx-on::after-request="setTimeout(() => htmx.trigger('#health-section', 'load'), 500)">
                 Start
+                <span id="spinner-start-{{ service.name }}" class="htmx-indicator spinner"></span>
             </button>
             {% endif %}
         </div>

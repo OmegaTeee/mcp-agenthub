@@ -193,12 +193,104 @@
             font-size: 12px;
         }
 
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .htmx-request button {
+            opacity: 0.7;
+        }
+
         .htmx-swapping {
             opacity: 0.5;
         }
 
         .htmx-settling {
             opacity: 1;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 0.6s linear infinite;
+            margin-left: 6px;
+            vertical-align: middle;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .htmx-indicator {
+            display: none;
+        }
+
+        .htmx-request .htmx-indicator {
+            display: inline-block;
+        }
+
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 15px 20px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            z-index: 1000;
+            animation: slideIn 0.3s ease-out;
+            max-width: 400px;
+        }
+
+        .toast.success {
+            border-left: 4px solid var(--green);
+        }
+
+        .toast.error {
+            border-left: 4px solid var(--red);
+        }
+
+        .toast-content {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .toast-icon {
+            font-size: 1.2rem;
+        }
+
+        .toast-message {
+            flex: 1;
+            font-size: 14px;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideOut {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(400px);
+                opacity: 0;
+            }
         }
 
         .loading {
@@ -341,16 +433,58 @@
     </div>
 
     <script>
+        // Toast notification system
+        function showToast(message, type = 'success') {
+            // Remove existing toasts
+            document.querySelectorAll('.toast').forEach(t => t.remove());
+
+            // Create toast element
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+
+            const icon = type === 'success' ? '✓' : '✗';
+            toast.innerHTML = `
+                <div class="toast-content">
+                    <span class="toast-icon">${icon}</span>
+                    <span class="toast-message">${message}</span>
+                </div>
+            `;
+
+            document.body.appendChild(toast);
+
+            // Auto-remove after 3 seconds
+            setTimeout(() => {
+                toast.style.animation = 'slideOut 0.3s ease-out';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
         // Show toast notifications for HTMX responses
         document.body.addEventListener('htmx:afterRequest', function(evt) {
             if (evt.detail.pathInfo.requestPath.includes('/actions/')) {
                 const xhr = evt.detail.xhr;
+
                 if (xhr.status === 200) {
                     const data = JSON.parse(xhr.responseText);
                     if (data.status === 'success') {
-                        console.log('Action completed:', data.message);
+                        showToast(data.message, 'success');
+                    } else if (data.status === 'error') {
+                        showToast(data.message, 'error');
                     }
+                } else if (xhr.status === 400) {
+                    const data = JSON.parse(xhr.responseText);
+                    showToast(data.message || 'Invalid request', 'error');
+                } else if (xhr.status >= 500) {
+                    const data = JSON.parse(xhr.responseText);
+                    showToast(data.message || 'Server error', 'error');
                 }
+            }
+        });
+
+        // Show error toast for failed requests
+        document.body.addEventListener('htmx:responseError', function(evt) {
+            if (evt.detail.pathInfo.requestPath.includes('/actions/')) {
+                showToast('Request failed. Please try again.', 'error');
             }
         });
     </script>
