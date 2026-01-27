@@ -14,8 +14,11 @@ python-multipart>=0.0.6
 # ruff>=0.1.0
 # mypy>=1.8.0
 
-# Optional: Keychain integration
-# keyring>=24.0.0
+# Keychain integration (for secure MCP credential management)
+keyring>=24.0.0
 
 # Optional: Vector cache (Phase 2.1)
 # qdrant-client>=1.7.0
+
+# MCP Servers (Python-based) - Examples only, uncomment to use
+# mcp-obsidian>=0.1.0  # Example: Obsidian via REST API (requires Local REST API plugin)

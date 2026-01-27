@@ -28,6 +28,8 @@ def create_dashboard_router(
     get_servers: Callable[[], Any],
     clear_cache: Callable[[], Any],
     restart_server: Callable[[str], Any],
+    start_server: Callable[[str], Any],
+    stop_server: Callable[[str], Any],
     get_circuit_breakers: Callable[[], dict[str, Any]],
 ) -> APIRouter:
     """
@@ -39,6 +41,8 @@ def create_dashboard_router(
         get_servers: Function to get server statuses
         clear_cache: Function to clear the enhancement cache
         restart_server: Function to restart a server by name
+        start_server: Function to start a server by name
+        stop_server: Function to stop a server by name
         get_circuit_breakers: Function to get circuit breaker states
 
     Returns:
@@ -153,6 +157,24 @@ def create_dashboard_router(
         try:
             await restart_server(server)
             return {"status": "success", "message": f"{server} restarted"}
+        except Exception as e:
+            return {"status": "error", "message": str(e)}
+
+    @router.post("/actions/start/{server}")
+    async def start_server_action(server: str):
+        """Start an MCP server."""
+        try:
+            await start_server(server)
+            return {"status": "success", "message": f"{server} started"}
+        except Exception as e:
+            return {"status": "error", "message": str(e)}
+
+    @router.post("/actions/stop/{server}")
+    async def stop_server_action(server: str):
+        """Stop an MCP server."""
+        try:
+            await stop_server(server)
+            return {"status": "success", "message": f"{server} stopped"}
         except Exception as e:
             return {"status": "error", "message": str(e)}
 

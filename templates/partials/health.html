@@ -10,6 +10,32 @@
             <span class="text-muted">(PID: {{ service.pid }})</span>
             {% endif %}
         </span>
+        <div style="margin-left: 10px; display: flex; gap: 5px;">
+            {% if service.status == 'running' %}
+            <button
+                class="btn btn-sm btn-warning"
+                hx-post="/dashboard/actions/stop/{{ service.name }}"
+                hx-swap="none"
+                hx-on::after-request="setTimeout(() => htmx.trigger('#health-section', 'load'), 500)">
+                Stop
+            </button>
+            <button
+                class="btn btn-sm btn-secondary"
+                hx-post="/dashboard/actions/restart/{{ service.name }}"
+                hx-swap="none"
+                hx-on::after-request="setTimeout(() => htmx.trigger('#health-section', 'load'), 500)">
+                Restart
+            </button>
+            {% else %}
+            <button
+                class="btn btn-sm btn-success"
+                hx-post="/dashboard/actions/start/{{ service.name }}"
+                hx-swap="none"
+                hx-on::after-request="setTimeout(() => htmx.trigger('#health-section', 'load'), 500)">
+                Start
+            </button>
+            {% endif %}
+        </div>
     </div>
 {% endfor %}
 </div>

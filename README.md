@@ -60,17 +60,20 @@ agenthub/
 ├── BUILD-SPEC.md           # Consolidated build specification (START HERE)
 ├── BUILD-TASKS.md          # Step-by-step build checklist
 ├── mcps/                   # Centralized MCP (Model Context Protocol) servers
-│   ├── package.json        # npm dependencies for all 6 MCP servers
-│   └── node_modules/       # Installed packages (gitignored)
+│   ├── package.json        # npm dependencies for MCP servers
+│   ├── node_modules/       # Installed npm packages (gitignored)
+│   └── obsidian-mcp-tools/ # Obsidian vault integration (standalone binary)
 ├── router/                 # Python FastAPI application
 ├── configs/                # Runtime configuration
-│   ├── mcp-servers.json    # MCP server registry (points to mcps/node_modules)
+│   ├── mcp-servers.json    # MCP server registry (points to mcps/)
 │   └── enhancement-rules.json
-├── scripts/                # Shell utilities
+├── scripts/                # Shell wrapper scripts for API key management
+│   ├── obsidian-mcp-tools.sh    # Obsidian MCP wrapper with Keychain integration
+│   ├── validate-mcp-servers.sh  # MCP server validation utility
+│   └── README.md                # Documentation for wrapper scripts
 ├── templates/              # Jinja2 templates for dashboard
 ├── tests/                  # Pytest test suite
-├── reference/              # Historical documentation
-│   └── docs/               # Original phase docs (for context)
+├── docs/                   # User guides (Keychain, Figma, ComfyUI, etc.)
 ├── docker-compose.yml
 ├── Dockerfile
 └── pyproject.toml
@@ -86,13 +89,13 @@ agenthub/
 ### For AI Agents
 Start with `BUILD-SPEC.md` for architecture understanding, then follow `BUILD-TASKS.md` sequentially.
 
-### Reference Documentation
-Original phase documentation is preserved in `reference/docs/` for additional context:
-- `reference/docs/phase-1-vision.md` - Original vision & goals
-- `reference/docs/phase-2-core.md` - Original MVP spec
-- `reference/docs/phase-3-integration.md` - Desktop integration details
-- `reference/docs/phase-4-dashboard.md` - Dashboard specifications
-- `reference/docs/user-guide/` - Integration guides (Keychain, Figma, etc.)
+### User Guides
+See `docs/` for integration guides:
+- [Getting Started](docs/getting-started.md)
+- [Keychain Setup](docs/keychain-setup.md)
+- [LaunchAgent Setup](docs/launchagent-setup.md)
+- [Figma Integration](docs/figma-integration.md)
+- [ComfyUI Integration](docs/comfyui-integration.md)
 
 ## Key Features
 
@@ -129,22 +132,66 @@ Features:
 
 ## MCP Servers
 
-AgentHub manages 6 MCP servers from `mcps/node_modules/`:
+AgentHub manages 7 MCP servers:
 
 | Server | Package | Auto-Start | Description |
 |--------|---------|------------|-------------|
 | context7 | @upstash/context7-mcp | Yes | Documentation fetching |
 | desktop-commander | @wonderwhy-er/desktop-commander | Yes | File operations |
 | sequential-thinking | @modelcontextprotocol/server-sequential-thinking | Yes | Step-by-step reasoning |
+| obsidian | obsidian-mcp-tools | Yes | Semantic search, templates for Obsidian vault |
 | memory | @modelcontextprotocol/server-memory | No | Cross-session persistence |
 | deepseek-reasoner | deepseek-reasoner-mcp | No | Local reasoning |
 | fetch | mcp-fetch | No | HTTP fetch, GraphQL |
 
+> See [configs/mcp-servers.json.examples](configs/mcp-servers.json.examples) for additional server examples including Python-based MCPs.
+
 ### Adding/Updating MCPs
+
+**For npm packages:**
 ```bash
 cd mcps
 npm install <package-name>
 # Update configs/mcp-servers.json with the new server
+```
+
+**For standalone binaries (like obsidian-mcp-tools):**
+```bash
+# Create directory
+mkdir -p mcps/<mcp-name>/bin
+
+# Copy binary
+cp /path/to/binary mcps/<mcp-name>/bin/
+
+# Create wrapper script (if API keys needed)
+# See scripts/README.md for wrapper pattern
+```
+
+**For Python packages:**
+```bash
+# Add to requirements.txt
+echo "<package-name>" >> requirements.txt
+
+# Install in virtual environment
+source .venv/bin/activate
+pip install -r requirements.txt
+
+# Create wrapper script (if API keys needed)
+# See mcps/obsidian-mcp-tools/PYTHON-MCP-EXAMPLE.md for complete pattern
+```
+
+### API Key Management
+
+MCP servers requiring API keys use wrapper scripts that retrieve credentials from macOS Keychain. See [scripts/README.md](scripts/README.md) for details.
+
+**Add API keys to Keychain:**
+```bash
+security add-generic-password -a $USER -s obsidian_api_key -w YOUR_API_KEY
+```
+
+**Validate installation:**
+```bash
+./scripts/validate-mcp-servers.sh
 ```
 
 ## Configuration

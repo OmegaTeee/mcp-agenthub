@@ -168,6 +168,20 @@ async def _restart_server(name: str):
     await supervisor.restart_server(name)
 
 
+async def _start_server(name: str):
+    """Start a server for dashboard."""
+    if not supervisor:
+        raise ValueError("Supervisor not initialized")
+    await supervisor.start_server(name)
+
+
+async def _stop_server(name: str):
+    """Stop a server for dashboard."""
+    if not supervisor:
+        raise ValueError("Supervisor not initialized")
+    await supervisor.stop_server(name)
+
+
 def _get_circuit_breakers():
     """Get circuit breaker states for dashboard."""
     if circuit_breakers:
@@ -182,6 +196,8 @@ dashboard_router = create_dashboard_router(
     get_servers=_get_servers,
     clear_cache=_clear_cache,
     restart_server=_restart_server,
+    start_server=_start_server,
+    stop_server=_stop_server,
     get_circuit_breakers=_get_circuit_breakers,
 )
 app.include_router(dashboard_router)

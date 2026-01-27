@@ -13,6 +13,7 @@ import signal
 import time
 from typing import TYPE_CHECKING
 
+from router.keyring_manager import get_keyring_manager
 from router.servers.models import ProcessInfo, ServerConfig, ServerStatus
 
 if TYPE_CHECKING:
@@ -74,11 +75,26 @@ class ProcessManager:
             cmd = config.get_full_command()
             logger.info(f"Starting server {name}: {' '.join(cmd)}")
 
-            # Merge environment
+            # Merge environment with keyring credential resolution
             import os
 
             env = os.environ.copy()
-            env.update(config.env)
+
+            # Process env config, resolving keyring references
+            km = get_keyring_manager()
+            resolved_env = km.process_env_config(config.env)
+
+            # Log credential retrieval status
+            keyring_keys = [
+                k for k, v in config.env.items()
+                if isinstance(v, dict) and v.get("source") == "keyring"
+            ]
+            if keyring_keys:
+                logger.info(
+                    f"Server {name}: Resolved {len(keyring_keys)} credential(s) from keyring"
+                )
+
+            env.update(resolved_env)
 
             # Spawn process
             process = await asyncio.create_subprocess_exec(

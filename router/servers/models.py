@@ -49,7 +49,10 @@ class ServerConfig(BaseModel):
     # Stdio transport settings
     command: str | None = Field(None, description="Command to run (e.g., 'npx', 'node')")
     args: list[str] = Field(default_factory=list, description="Command arguments")
-    env: dict[str, str] = Field(default_factory=dict, description="Environment variables")
+    env: dict[str, str | dict] = Field(
+        default_factory=dict,
+        description="Environment variables (supports keyring references)",
+    )
 
     # HTTP transport settings
     url: str | None = Field(None, description="Server URL for HTTP transport")

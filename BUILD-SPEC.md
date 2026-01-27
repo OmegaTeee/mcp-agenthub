@@ -642,10 +642,11 @@ Run with: `pytest tests/ -v`
 
 ---
 
-## References
+## User Guides
 
-See `reference/` folder for original phase documentation:
-- `reference/docs/phase-1-vision.md` - Vision & goals
-- `reference/docs/phase-2-core.md` - Original MVP spec
-- `reference/docs/phase-3-integration.md` - Desktop integration
-- `reference/docs/phase-4-dashboard.md` - Dashboard spec
+See `docs/` for integration guides:
+- `docs/getting-started.md` - Quick start guide
+- `docs/keychain-setup.md` - macOS Keychain integration
+- `docs/launchagent-setup.md` - Auto-start on login
+- `docs/figma-integration.md` - Figma MCP setup
+- `docs/comfyui-integration.md` - ComfyUI integration

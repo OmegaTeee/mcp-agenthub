@@ -126,13 +126,12 @@ CB_RECOVERY_TIMEOUT=30
 LOG_LEVEL=info
 ```
 
-## Reference Documentation
+## User Guides
 
-See `reference/docs/` for detailed specifications:
-- `phase-1-vision.md` - Project goals
-- `phase-2-core.md` - MVP architecture
-- `phase-3-integration.md` - Desktop app integration
-- `phase-4-dashboard.md` - Dashboard design
+See `docs/` for integration guides:
+- `getting-started.md` - Quick start
+- `keychain-setup.md` - macOS Keychain
+- `launchagent-setup.md` - Auto-start setup
 
 ## Common Tasks
 

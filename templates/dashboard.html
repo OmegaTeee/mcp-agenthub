@@ -178,6 +178,21 @@
             color: var(--bg);
         }
 
+        .btn-warning {
+            background: var(--yellow);
+            color: var(--bg);
+        }
+
+        .btn-secondary {
+            background: #555;
+            color: var(--text);
+        }
+
+        .btn-sm {
+            padding: 5px 10px;
+            font-size: 12px;
+        }
+
         .htmx-swapping {
             opacity: 0.5;
         }
@@ -272,6 +287,7 @@
         <div class="grid">
             <!-- Services Health -->
             <div class="card"
+                 id="health-section"
                  hx-get="/dashboard/health-partial"
                  hx-trigger="load, every 5s"
                  hx-swap="innerHTML">

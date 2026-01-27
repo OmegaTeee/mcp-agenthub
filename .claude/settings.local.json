@@ -18,7 +18,18 @@
       "Bash(git push:*)",
       "Bash(ls:*)",
       "Bash(lsof:*)",
-      "Bash(xargs kill -9)"
+      "Bash(xargs kill -9)",
+      "WebFetch(domain:smithery.ai)",
+      "Bash(cat:*)",
+      "Bash(chmod:*)",
+      "Bash(./scripts/validate-mcp-servers.sh:*)",
+      "Bash(./scripts/obsidian-mcp-tools.sh:*)",
+      "Bash(pip show:*)",
+      "Bash(./scripts/manage-keys.py migrate:*)",
+      "Bash(xargs kill -9 sleep 2 echo \"Port 9090 status:\" lsof -i:9090)",
+      "Bash(kill:*)",
+      "Bash(launchctl list:*)",
+      "Bash(launchctl load:*)"
     ]
   },
   "enableAllProjectMcpServers": true,
