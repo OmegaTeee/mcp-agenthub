@@ -13,8 +13,11 @@ import logging
 from contextlib import asynccontextmanager
 from typing import Any
 
+from pathlib import Path
+
 from fastapi import FastAPI, Header, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from router.config import Settings, get_settings
@@ -120,6 +123,10 @@ app.add_middleware(
 
 # Activity logging middleware for dashboard
 app.add_middleware(ActivityLoggingMiddleware)
+
+# Mount static files for dashboard CSS
+static_path = Path(__file__).parent.parent / "templates" / "css"
+app.mount("/static/css", StaticFiles(directory=str(static_path)), name="static")
 
 
 # =============================================================================
