@@ -139,6 +139,14 @@ class KeyringManager:
                     # Don't add to env if missing - let MCP server fail with clear error
                     continue
 
+                # Validate credential is not empty or whitespace-only
+                if not value or not value.strip():
+                    logger.error(
+                        f"{env_key}: Retrieved empty or whitespace-only credential from keyring. "
+                        f"Please set a valid value."
+                    )
+                    continue
+
                 processed[env_key] = value
 
             # Handle static string value

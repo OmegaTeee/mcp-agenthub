@@ -9,11 +9,12 @@ Provides endpoints for the HTMX-powered dashboard:
 - Quick actions (clear cache, restart servers)
 """
 
+import re
 from pathlib import Path
 from typing import Any, Callable
 
 from fastapi import APIRouter, Request
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 
 from router.middleware import activity_log
@@ -145,6 +146,27 @@ def create_dashboard_router(
             },
         )
 
+    def _validate_server_name(server: str) -> tuple[bool, str | None]:
+        """
+        Validate server name format and existence.
+
+        Args:
+            server: Server name to validate
+
+        Returns:
+            Tuple of (is_valid, error_message)
+        """
+        # Check format (alphanumeric, hyphens, underscores only)
+        if not re.match(r"^[a-z0-9_-]+$", server):
+            return False, "Invalid server name format"
+
+        # Check if server exists in registry
+        servers_data = get_servers()
+        if server not in servers_data.get("servers", {}):
+            return False, f"Server '{server}' not found"
+
+        return True, None
+
     @router.post("/actions/clear-cache")
     async def clear_cache_action():
         """Clear the enhancement cache."""
@@ -154,28 +176,61 @@ def create_dashboard_router(
     @router.post("/actions/restart/{server}")
     async def restart_server_action(server: str):
         """Restart an MCP server."""
+        # Validate server name
+        is_valid, error_msg = _validate_server_name(server)
+        if not is_valid:
+            return JSONResponse(
+                status_code=400,
+                content={"status": "error", "message": error_msg}
+            )
+
         try:
             await restart_server(server)
             return {"status": "success", "message": f"{server} restarted"}
         except Exception as e:
-            return {"status": "error", "message": str(e)}
+            return JSONResponse(
+                status_code=500,
+                content={"status": "error", "message": str(e)}
+            )
 
     @router.post("/actions/start/{server}")
     async def start_server_action(server: str):
         """Start an MCP server."""
+        # Validate server name
+        is_valid, error_msg = _validate_server_name(server)
+        if not is_valid:
+            return JSONResponse(
+                status_code=400,
+                content={"status": "error", "message": error_msg}
+            )
+
         try:
             await start_server(server)
             return {"status": "success", "message": f"{server} started"}
         except Exception as e:
-            return {"status": "error", "message": str(e)}
+            return JSONResponse(
+                status_code=500,
+                content={"status": "error", "message": str(e)}
+            )
 
     @router.post("/actions/stop/{server}")
     async def stop_server_action(server: str):
         """Stop an MCP server."""
+        # Validate server name
+        is_valid, error_msg = _validate_server_name(server)
+        if not is_valid:
+            return JSONResponse(
+                status_code=400,
+                content={"status": "error", "message": error_msg}
+            )
+
         try:
             await stop_server(server)
             return {"status": "success", "message": f"{server} stopped"}
         except Exception as e:
-            return {"status": "error", "message": str(e)}
+            return JSONResponse(
+                status_code=500,
+                content={"status": "error", "message": str(e)}
+            )
 
     return router

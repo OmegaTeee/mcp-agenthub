@@ -165,21 +165,27 @@ async def _restart_server(name: str):
     """Restart a server for dashboard."""
     if not supervisor:
         raise ValueError("Supervisor not initialized")
+    logger.info(f"Dashboard action: Restarting server '{name}'")
     await supervisor.restart_server(name)
+    logger.info(f"Dashboard action: Server '{name}' restarted successfully")
 
 
 async def _start_server(name: str):
     """Start a server for dashboard."""
     if not supervisor:
         raise ValueError("Supervisor not initialized")
+    logger.info(f"Dashboard action: Starting server '{name}'")
     await supervisor.start_server(name)
+    logger.info(f"Dashboard action: Server '{name}' started successfully")
 
 
 async def _stop_server(name: str):
     """Stop a server for dashboard."""
     if not supervisor:
         raise ValueError("Supervisor not initialized")
+    logger.info(f"Dashboard action: Stopping server '{name}'")
     await supervisor.stop_server(name)
+    logger.info(f"Dashboard action: Server '{name}' stopped successfully")
 
 
 def _get_circuit_breakers():

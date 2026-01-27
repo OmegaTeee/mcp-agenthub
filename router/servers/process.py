@@ -9,6 +9,7 @@ Handles:
 
 import asyncio
 import logging
+import os
 import signal
 import time
 from typing import TYPE_CHECKING
@@ -76,8 +77,6 @@ class ProcessManager:
             logger.info(f"Starting server {name}: {' '.join(cmd)}")
 
             # Merge environment with keyring credential resolution
-            import os
-
             env = os.environ.copy()
 
             # Process env config, resolving keyring references
