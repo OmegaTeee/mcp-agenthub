@@ -27,6 +27,14 @@
           AgentHub Dashboard
         </h1>
         <div class="header-actions">
+          <button
+            hx-post="/dashboard/actions/clear-cache"
+            hx-swap="none"
+            hx-confirm="Clear the prompt cache?"
+            class="btn font-mono btn-danger"
+          >
+            &#x1F5D1; Clear Cache
+          </button>
           <button onclick="location.reload()" class="btn font-mono btn-success">
             &#x21BB; Refresh
           </button>
@@ -57,7 +65,7 @@
       </div>
 
       <!-- Quick Actions -->
-      <div class="card" style="margin-bottom: 20px">
+      <!-- div class="card" style="margin-bottom: 20px">
         <h3>&#x26A1; Quick Actions</h3>
         <div class="actions">
           <button
@@ -90,7 +98,7 @@
             &#x21BB; Restart Seq Thinking
           </button>
         </div>
-      </div>
+      </div -->
 
       <!-- Recent Activity -->
       <div

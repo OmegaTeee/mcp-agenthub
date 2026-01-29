@@ -3,42 +3,42 @@
     "context7": {
       "command": "node",
       "args": [
-        "${workspaceFolder}/mcps/node_modules/@upstash/context7-mcp/dist/index.js"
+        "${userHome}/.local/share/agenthub/mcps/node_modules/@upstash/context7-mcp/dist/index.js"
       ],
       "env": {}
     },
     "desktop-commander": {
       "command": "node",
       "args": [
-        "${workspaceFolder}/mcps/node_modules/@wonderwhy-er/desktop-commander/dist/index.js"
+        "${userHome}/.local/share/agenthub/mcps/node_modules/@wonderwhy-er/desktop-commander/dist/index.js"
       ],
       "env": {}
     },
     "sequential-thinking": {
       "command": "node",
       "args": [
-        "${workspaceFolder}/mcps/node_modules/@modelcontextprotocol/server-sequential-thinking/dist/index.js"
+        "${userHome}/.local/share/agenthub/mcps/node_modules/@modelcontextprotocol/server-sequential-thinking/dist/index.js"
       ],
       "env": {}
     },
     "memory": {
       "command": "node",
       "args": [
-        "${workspaceFolder}/mcps/node_modules/@modelcontextprotocol/server-memory/dist/index.js"
+        "${userHome}/.local/share/agenthub/mcps/node_modules/@modelcontextprotocol/server-memory/dist/index.js"
       ],
       "env": {}
     },
     "deepseek-reasoner": {
       "command": "node",
       "args": [
-        "${workspaceFolder}/mcps/node_modules/deepseek-reasoner-mcp/dist/index.js"
+        "${userHome}/.local/share/agenthub/mcps/node_modules/deepseek-reasoner-mcp/dist/index.js"
       ],
       "env": {}
     },
     "fetch": {
       "command": "node",
       "args": [
-        "${workspaceFolder}/mcps/node_modules/mcp-fetch/dist/stdio.js"
+        "${userHome}/.local/share/agenthub/mcps/node_modules/mcp-fetch/dist/stdio.js"
       ],
       "env": {}
     }
