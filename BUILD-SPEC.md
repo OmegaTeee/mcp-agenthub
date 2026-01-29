@@ -644,9 +644,9 @@ Run with: `pytest tests/ -v`
 
 ## User Guides
 
-See `docs/` for integration guides:
-- `docs/getting-started.md` - Quick start guide
-- `docs/keychain-setup.md` - macOS Keychain integration
-- `docs/launchagent-setup.md` - Auto-start on login
-- `docs/figma-integration.md` - Figma MCP setup
-- `docs/comfyui-integration.md` - ComfyUI integration
+See `guides/` for integration guides:
+- `guides/getting-started.md` - Quick start guide
+- `guides/keychain-setup.md` - macOS Keychain integration
+- `guides/launchagent-setup.md` - Auto-start on login
+- `guides/figma-integration.md` - Figma MCP setup
+- `guides/comfyui-integration.md` - ComfyUI integration

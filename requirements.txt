@@ -17,6 +17,12 @@ python-multipart>=0.0.6
 # Keychain integration (for secure MCP credential management)
 keyring>=24.0.0
 
+# Structured logging for audit trails
+structlog>=25.0.0
+
+# Async SQLite for persistent activity log
+aiosqlite>=0.22.0
+
 # Optional: Vector cache (Phase 2.1)
 # qdrant-client>=1.7.0
 

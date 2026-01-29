@@ -57,8 +57,8 @@ Successfully integrated Python `keyring` package for secure MCP server credentia
 - Verified retrieval works correctly
 
 ### 7. ✅ Created Documentation
-- [docs/keyring-migration-guide.md](docs/keyring-migration-guide.md) - Complete guide
-- [docs/keyring-vs-security-cli.md](docs/keyring-vs-security-cli.md) - Architecture comparison
+- [guides/keyring-migration-guide.md](guides/keyring-migration-guide.md) - Complete guide
+- [guides/keyring-vs-security-cli.md](guides/keyring-vs-security-cli.md) - Architecture comparison
 - [configs/mcp-servers-keyring.json.example](configs/mcp-servers-keyring.json.example) - Config examples
 
 ### 8. ✅ Testing
@@ -198,8 +198,8 @@ If issues occur:
 ### Tools & Documentation
 - `scripts/manage-keys.py` - NEW: Key management CLI
 - `test_keyring_integration.py` - NEW: Integration tests
-- `docs/keyring-migration-guide.md` - NEW: Migration guide
-- `docs/keyring-vs-security-cli.md` - NEW: Architecture comparison
+- `guides/keyring-migration-guide.md` - NEW: Migration guide
+- `guides/keyring-vs-security-cli.md` - NEW: Architecture comparison
 - `configs/mcp-servers-keyring.json.example` - NEW: Config examples
 
 ---
@@ -289,6 +289,6 @@ security find-generic-password -a $USER -s obsidian_api_key -w
 ## Contact
 
 For issues or questions about keyring integration:
-- See [docs/keyring-migration-guide.md](docs/keyring-migration-guide.md)
+- See [guides/keyring-migration-guide.md](guides/keyring-migration-guide.md)
 - Check [test_keyring_integration.py](test_keyring_integration.py) for examples
 - Review [router/keyring_manager.py](router/keyring_manager.py) implementation

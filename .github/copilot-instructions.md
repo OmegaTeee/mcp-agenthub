@@ -128,7 +128,7 @@ LOG_LEVEL=info
 
 ## User Guides
 
-See `docs/` for integration guides:
+See `guides/` for integration guides:
 - `getting-started.md` - Quick start
 - `keychain-setup.md` - macOS Keychain
 - `launchagent-setup.md` - Auto-start setup

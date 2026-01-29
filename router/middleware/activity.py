@@ -2,18 +2,26 @@
 Activity Logging for Dashboard.
 
 Tracks recent requests with method, path, status, and duration.
-Uses a bounded deque for memory efficiency.
+Uses both in-memory deque (for quick access) and persistent SQLite storage.
 """
 
+import asyncio
+import logging
 import time
 from collections import deque
 from datetime import datetime
-from typing import Any
+from typing import Any, Optional
 
 from pydantic import BaseModel
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import Response
+
+logger = logging.getLogger(__name__)
+
+# Forward declaration for type hint
+if False:  # TYPE_CHECKING
+    from router.middleware.persistent_activity import PersistentActivityLog
 
 
 class ActivityEntry(BaseModel):
@@ -102,9 +110,17 @@ class ActivityLoggingMiddleware(BaseHTTPMiddleware):
 
     Captures method, path, status code, and duration for each request.
     Excludes dashboard partial requests to avoid noise.
+
+    Writes to both:
+    1. In-memory log (for quick dashboard access)
+    2. Persistent SQLite log (for historical queries)
     """
 
-    def __init__(self, app, log: ActivityLog | None = None):
+    def __init__(
+        self,
+        app,
+        log: Optional[ActivityLog] = None,
+    ):
         super().__init__(app)
         self._log = log or activity_log
 
@@ -123,11 +139,30 @@ class ActivityLoggingMiddleware(BaseHTTPMiddleware):
         response = await call_next(request)
         duration = time.time() - start_time
 
+        # Write to in-memory log (synchronous)
         self._log.add(
             method=request.method,
             path=path,
             status=response.status_code,
             duration=duration,
         )
+
+        # Write to persistent log (async, with context preservation)
+        # Get persistent log lazily to avoid circular dependency
+        try:
+            from router.middleware.persistent_activity import persistent_activity_log
+            from router.middleware.audit_context import get_audit_context
+
+            if persistent_activity_log and persistent_activity_log._initialized:
+                # Await directly to preserve context (SQLite writes are fast)
+                await persistent_activity_log.add(
+                    method=request.method,
+                    path=path,
+                    status=response.status_code,
+                    duration=duration,
+                )
+        except Exception as e:
+            # Don't fail request if activity logging fails
+            logger.warning(f"Failed to write to persistent activity log: {e}")
 
         return response

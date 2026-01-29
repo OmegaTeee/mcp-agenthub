@@ -7,6 +7,8 @@ Handles secure credential retrieval for MCP servers.
 import logging
 from typing import Any, Dict, Optional
 
+from router.audit import audit_credential_access
+
 try:
     import keyring
     KEYRING_AVAILABLE = True
@@ -41,17 +43,40 @@ class KeyringManager:
         """
         if not self.enabled:
             logger.error(f"Cannot retrieve {key}: keyring not available")
+            audit_credential_access(
+                action="get",
+                credential_key=key,
+                status="failed",
+                error="keyring not available"
+            )
             return None
 
         try:
             value = keyring.get_password(self.service_name, key)
             if value:
                 logger.debug(f"Retrieved credential: {key}")
+                audit_credential_access(
+                    action="get",
+                    credential_key=key,
+                    status="success"
+                )
             else:
                 logger.warning(f"Credential not found: {key}")
+                audit_credential_access(
+                    action="get",
+                    credential_key=key,
+                    status="failed",
+                    error="credential not found"
+                )
             return value
         except Exception as e:
             logger.error(f"Error retrieving credential {key}: {e}")
+            audit_credential_access(
+                action="get",
+                credential_key=key,
+                status="failed",
+                error=str(e)
+            )
             return None
 
     def set_credential(self, key: str, value: str) -> bool:
@@ -67,14 +92,31 @@ class KeyringManager:
         """
         if not self.enabled:
             logger.error(f"Cannot store {key}: keyring not available")
+            audit_credential_access(
+                action="set",
+                credential_key=key,
+                status="failed",
+                error="keyring not available"
+            )
             return False
 
         try:
             keyring.set_password(self.service_name, key, value)
             logger.info(f"Stored credential: {key}")
+            audit_credential_access(
+                action="set",
+                credential_key=key,
+                status="success"
+            )
             return True
         except Exception as e:
             logger.error(f"Error storing credential {key}: {e}")
+            audit_credential_access(
+                action="set",
+                credential_key=key,
+                status="failed",
+                error=str(e)
+            )
             return False
 
     def delete_credential(self, key: str) -> bool:
@@ -89,14 +131,31 @@ class KeyringManager:
         """
         if not self.enabled:
             logger.error(f"Cannot delete {key}: keyring not available")
+            audit_credential_access(
+                action="delete",
+                credential_key=key,
+                status="failed",
+                error="keyring not available"
+            )
             return False
 
         try:
             keyring.delete_password(self.service_name, key)
             logger.info(f"Deleted credential: {key}")
+            audit_credential_access(
+                action="delete",
+                credential_key=key,
+                status="success"
+            )
             return True
         except Exception as e:
             logger.error(f"Error deleting credential {key}: {e}")
+            audit_credential_access(
+                action="delete",
+                credential_key=key,
+                status="failed",
+                error=str(e)
+            )
             return False
 
     def process_env_config(self, env_config: Dict[str, Any]) -> Dict[str, str]:

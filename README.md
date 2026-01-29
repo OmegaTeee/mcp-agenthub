@@ -73,7 +73,7 @@ agenthub/
 │   └── README.md                # Documentation for wrapper scripts
 ├── templates/              # Jinja2 templates for dashboard
 ├── tests/                  # Pytest test suite
-├── docs/                   # User guides (Keychain, Figma, ComfyUI, etc.)
+├── guides/                 # User guides (Keychain, Figma, ComfyUI, etc.)
 ├── docker-compose.yml
 ├── Dockerfile
 └── pyproject.toml
@@ -90,12 +90,12 @@ agenthub/
 Start with `BUILD-SPEC.md` for architecture understanding, then follow `BUILD-TASKS.md` sequentially.
 
 ### User Guides
-See `docs/` for integration guides:
-- [Getting Started](docs/getting-started.md)
-- [Keychain Setup](docs/keychain-setup.md)
-- [LaunchAgent Setup](docs/launchagent-setup.md)
-- [Figma Integration](docs/figma-integration.md)
-- [ComfyUI Integration](docs/comfyui-integration.md)
+See `guides/` for integration guides:
+- [Getting Started](guides/getting-started.md)
+- [Keychain Setup](guides/keychain-setup.md)
+- [LaunchAgent Setup](guides/launchagent-setup.md)
+- [Figma Integration](guides/figma-integration.md)
+- [ComfyUI Integration](guides/comfyui-integration.md)
 
 ## Key Features
 

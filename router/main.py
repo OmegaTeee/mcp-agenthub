@@ -23,7 +23,8 @@ from pydantic import BaseModel
 from router.config import Settings, get_settings
 from router.dashboard import create_dashboard_router
 from router.enhancement import EnhancementService
-from router.middleware import ActivityLoggingMiddleware
+from router.middleware import ActivityLoggingMiddleware, AuditContextMiddleware
+from router.audit import audit_admin_action, setup_audit_logging
 from router.clients import (
     generate_claude_desktop_config,
     generate_raycast_script,
@@ -55,15 +56,28 @@ supervisor: Supervisor | None = None
 enhancement_service: EnhancementService | None = None
 circuit_breakers: CircuitBreakerRegistry | None = None
 documentation_pipeline: DocumentationPipeline | None = None
+persistent_activity_log = None  # Will be initialized in lifespan
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan handler for startup/shutdown."""
-    global registry, process_manager, supervisor, enhancement_service, circuit_breakers, documentation_pipeline
+    global registry, process_manager, supervisor, enhancement_service, circuit_breakers, documentation_pipeline, persistent_activity_log
 
     # Startup
     settings = get_settings()
+
+    # Setup audit logging (log to /tmp for development, can be changed in production)
+    from pathlib import Path
+    log_dir = Path("/tmp/agenthub")
+    setup_audit_logging(log_dir=log_dir, console_output=True)
+
+    # Initialize persistent activity log
+    from router.middleware.persistent_activity import get_persistent_activity_log
+    persistent_activity_log = get_persistent_activity_log(db_path=log_dir / "activity.db")
+    await persistent_activity_log.initialize()
+    logger.info("Initialized persistent activity log")
+
     logger.info(f"Starting AgentHub Router on {settings.host}:{settings.port}")
 
     # Initialize server management
@@ -121,8 +135,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Activity logging middleware for dashboard
+# Activity logging middleware for dashboard (uses lazy init for persistent log)
+# Must be added BEFORE AuditContext so that AuditContext runs FIRST (middleware is a stack)
 app.add_middleware(ActivityLoggingMiddleware)
+
+# Audit context middleware (sets request context for downstream middleware)
+app.add_middleware(AuditContextMiddleware)
 
 # Mount static files for dashboard CSS
 static_path = Path(__file__).parent.parent / "templates" / "css"
@@ -164,35 +182,80 @@ def _get_servers():
 
 async def _clear_cache():
     """Clear enhancement cache for dashboard."""
+    from router.audit import audit_event
+
     if enhancement_service:
-        await enhancement_service.clear_cache()
+        audit_event(
+            event_type="admin_action",
+            action="clear",
+            resource_type="cache",
+            resource_name="enhancement_cache",
+            status="initiated"
+        )
+        try:
+            await enhancement_service.clear_cache()
+            audit_event(
+                event_type="admin_action",
+                action="clear",
+                resource_type="cache",
+                resource_name="enhancement_cache",
+                status="success"
+            )
+        except Exception as e:
+            audit_event(
+                event_type="admin_action",
+                action="clear",
+                resource_type="cache",
+                resource_name="enhancement_cache",
+                status="failed",
+                error=str(e)
+            )
+            raise
 
 
 async def _restart_server(name: str):
     """Restart a server for dashboard."""
     if not supervisor:
         raise ValueError("Supervisor not initialized")
-    logger.info(f"Dashboard action: Restarting server '{name}'")
-    await supervisor.restart_server(name)
-    logger.info(f"Dashboard action: Server '{name}' restarted successfully")
+
+    audit_admin_action(action="restart", server_name=name, status="initiated")
+
+    try:
+        await supervisor.restart_server(name)
+        audit_admin_action(action="restart", server_name=name, status="success")
+    except Exception as e:
+        audit_admin_action(action="restart", server_name=name, status="failed", error=str(e))
+        raise
 
 
 async def _start_server(name: str):
     """Start a server for dashboard."""
     if not supervisor:
         raise ValueError("Supervisor not initialized")
-    logger.info(f"Dashboard action: Starting server '{name}'")
-    await supervisor.start_server(name)
-    logger.info(f"Dashboard action: Server '{name}' started successfully")
+
+    audit_admin_action(action="start", server_name=name, status="initiated")
+
+    try:
+        await supervisor.start_server(name)
+        audit_admin_action(action="start", server_name=name, status="success")
+    except Exception as e:
+        audit_admin_action(action="start", server_name=name, status="failed", error=str(e))
+        raise
 
 
 async def _stop_server(name: str):
     """Stop a server for dashboard."""
     if not supervisor:
         raise ValueError("Supervisor not initialized")
-    logger.info(f"Dashboard action: Stopping server '{name}'")
-    await supervisor.stop_server(name)
-    logger.info(f"Dashboard action: Server '{name}' stopped successfully")
+
+    audit_admin_action(action="stop", server_name=name, status="initiated")
+
+    try:
+        await supervisor.stop_server(name)
+        audit_admin_action(action="stop", server_name=name, status="success")
+    except Exception as e:
+        audit_admin_action(action="stop", server_name=name, status="failed", error=str(e))
+        raise
 
 
 def _get_circuit_breakers():
@@ -648,6 +711,167 @@ async def reset_circuit_breaker(name: str):
 
 
 # =============================================================================
+# Audit & Activity Query Endpoints
+# =============================================================================
+
+
+@app.get("/audit/activity")
+async def query_activity(
+    method: str | None = None,
+    status_min: int | None = None,
+    status_max: int | None = None,
+    client_id: str | None = None,
+    request_id: str | None = None,
+    limit: int = 50,
+    offset: int = 0,
+):
+    """
+    Query activity log with filters.
+
+    Query Parameters:
+        method: Filter by HTTP method (GET, POST, etc.)
+        status_min: Minimum status code
+        status_max: Maximum status code
+        client_id: Filter by client ID
+        request_id: Filter by request ID
+        limit: Maximum entries to return (default: 50, max: 1000)
+        offset: Number of entries to skip for pagination (default: 0)
+
+    Returns:
+        {
+            "total": <total count matching filters>,
+            "limit": <limit used>,
+            "offset": <offset used>,
+            "entries": [<activity entries>]
+        }
+    """
+    if not persistent_activity_log:
+        raise HTTPException(503, "Activity log not initialized")
+
+    # Limit cap
+    limit = min(limit, 1000)
+
+    # Get count and entries
+    total = await persistent_activity_log.count(
+        method=method,
+        status_min=status_min,
+        status_max=status_max,
+        client_id=client_id,
+    )
+
+    entries = await persistent_activity_log.query(
+        method=method,
+        status_min=status_min,
+        status_max=status_max,
+        client_id=client_id,
+        request_id=request_id,
+        limit=limit,
+        offset=offset,
+    )
+
+    return {
+        "total": total,
+        "limit": limit,
+        "offset": offset,
+        "entries": entries,
+    }
+
+
+@app.get("/audit/activity/stats")
+async def activity_stats():
+    """
+    Get activity log statistics.
+
+    Returns:
+        {
+            "total_entries": <total count>,
+            "by_method": {<method>: <count>, ...},
+            "by_status": {<status>: <count>, ...}
+        }
+    """
+    if not persistent_activity_log:
+        raise HTTPException(503, "Activity log not initialized")
+
+    import aiosqlite
+
+    stats = {
+        "total_entries": await persistent_activity_log.count(),
+        "by_method": {},
+        "by_status": {},
+    }
+
+    # Get method distribution
+    async with aiosqlite.connect(str(persistent_activity_log.db_path)) as db:
+        cursor = await db.execute(
+            "SELECT method, COUNT(*) as count FROM activity GROUP BY method ORDER BY count DESC"
+        )
+        rows = await cursor.fetchall()
+        stats["by_method"] = {row[0]: row[1] for row in rows}
+
+        # Get status distribution
+        cursor = await db.execute(
+            "SELECT status, COUNT(*) as count FROM activity GROUP BY status ORDER BY status"
+        )
+        rows = await cursor.fetchall()
+        stats["by_status"] = {row[0]: row[1] for row in rows}
+
+    return stats
+
+
+@app.delete("/audit/activity")
+async def clear_activity_log():
+    """Clear all activity log entries."""
+    if not persistent_activity_log:
+        raise HTTPException(503, "Activity log not initialized")
+
+    await persistent_activity_log.clear()
+
+    from router.audit import audit_event
+    audit_event(
+        event_type="admin_action",
+        action="clear",
+        resource_type="activity_log",
+        resource_name="persistent_activity",
+        status="success",
+    )
+
+    return {"message": "Activity log cleared"}
+
+
+@app.post("/audit/activity/cleanup")
+async def cleanup_old_activity(days: int = 30):
+    """
+    Delete activity entries older than specified days.
+
+    Query Parameters:
+        days: Delete entries older than this many days (default: 30)
+
+    Returns:
+        {"deleted": <number of entries deleted>}
+    """
+    if not persistent_activity_log:
+        raise HTTPException(503, "Activity log not initialized")
+
+    if days < 1:
+        raise HTTPException(400, "Days must be >= 1")
+
+    deleted = await persistent_activity_log.cleanup_old_entries(days)
+
+    from router.audit import audit_event
+    audit_event(
+        event_type="admin_action",
+        action="cleanup",
+        resource_type="activity_log",
+        resource_name="persistent_activity",
+        status="success",
+        days=days,
+        deleted_count=deleted,
+    )
+
+    return {"deleted": deleted}
+
+
+# =============================================================================
 # Pipeline Endpoints
 # =============================================================================
 
@@ -747,3 +971,122 @@ if __name__ == "__main__":
         port=settings.port,
         reload=True,
     )
+
+
+# =============================================================================
+# Audit Integrity & Security Endpoints
+# =============================================================================
+
+
+@app.get("/audit/integrity/verify")
+async def verify_audit_integrity():
+    """
+    Verify audit log integrity using checksums.
+
+    Returns:
+        {
+            "valid": true/false,
+            "message": "status message",
+            "current_checksum": {...},
+            "previous_checksum": {...}
+        }
+    """
+    from router.audit_integrity import get_integrity_manager
+
+    integrity_mgr = get_integrity_manager()
+
+    try:
+        is_valid, error_msg = integrity_mgr.verify_integrity()
+
+        # Get current and previous checksums
+        history = integrity_mgr.get_checksum_history(limit=2)
+        current_checksum = history[0].model_dump() if history else None
+        previous_checksum = history[1].model_dump() if len(history) > 1 else None
+
+        return {
+            "valid": is_valid,
+            "message": error_msg or "Integrity verified successfully",
+            "current_checksum": current_checksum,
+            "previous_checksum": previous_checksum,
+        }
+    except Exception as e:
+        logger.error(f"Integrity verification failed: {e}")
+        raise HTTPException(500, f"Integrity verification error: {e}")
+
+
+@app.get("/audit/integrity/history")
+async def get_integrity_history(limit: int = 10):
+    """
+    Get checksum history for audit log.
+
+    Query Parameters:
+        limit: Maximum number of records to return (default: 10)
+
+    Returns:
+        List of checksum records
+    """
+    from router.audit_integrity import get_integrity_manager
+
+    integrity_mgr = get_integrity_manager()
+    history = integrity_mgr.get_checksum_history(limit=limit)
+
+    return {
+        "total": len(history),
+        "checksums": [c.model_dump() for c in history],
+    }
+
+
+@app.get("/security/alerts")
+async def get_security_alerts(
+    limit: int = 50,
+    severity: str | None = None,
+):
+    """
+    Get recent security alerts.
+
+    Query Parameters:
+        limit: Maximum alerts to return (default: 50)
+        severity: Filter by severity (info, warning, critical)
+
+    Returns:
+        {
+            "total": <total count>,
+            "alerts": [<alert objects>]
+        }
+    """
+    from router.security_alerts import AlertSeverity, get_alert_manager
+
+    alert_mgr = get_alert_manager()
+
+    # Parse severity
+    severity_filter = None
+    if severity:
+        try:
+            severity_filter = AlertSeverity(severity.lower())
+        except ValueError:
+            raise HTTPException(400, f"Invalid severity: {severity}")
+
+    alerts = alert_mgr.get_recent_alerts(limit=limit, severity=severity_filter)
+
+    return {
+        "total": len(alerts),
+        "alerts": [a.model_dump() for a in alerts],
+    }
+
+
+@app.get("/security/alerts/stats")
+async def get_alert_stats():
+    """
+    Get security alert statistics.
+
+    Returns:
+        {
+            "total_alerts": <count>,
+            "by_severity": {<severity>: <count>},
+            "by_type": {<type>: <count>}
+        }
+    """
+    from router.security_alerts import get_alert_manager
+
+    alert_mgr = get_alert_manager()
+    return alert_mgr.get_alert_stats()

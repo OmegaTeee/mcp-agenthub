@@ -29,7 +29,9 @@
       "Bash(xargs kill -9 sleep 2 echo \"Port 9090 status:\" lsof -i:9090)",
       "Bash(kill:*)",
       "Bash(launchctl list:*)",
-      "Bash(launchctl load:*)"
+      "Bash(launchctl load:*)",
+      "Bash(sqlite3:*)",
+      "Bash(bash -n:*)"
     ]
   },
   "enableAllProjectMcpServers": true,
