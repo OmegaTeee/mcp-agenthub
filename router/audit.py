@@ -21,11 +21,14 @@ import logging
 import logging.handlers
 import sys
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import structlog
 
 from router.middleware.audit_context import get_audit_context
+
+# Get logger instance
+logger = logging.getLogger(__name__)
 
 # Configure structlog processors
 structlog.configure(
@@ -48,7 +51,7 @@ structlog.configure(
 
 
 def setup_audit_logging(
-    log_dir: Optional[Path] = None,
+    log_dir: Path | None = None,
     console_output: bool = True,
 ) -> None:
     """
@@ -111,7 +114,7 @@ def audit_event(
     resource_type: str,
     resource_name: str,
     status: str,
-    error: Optional[str] = None,
+    error: str | None = None,
     **kwargs: Any,
 ) -> None:
     """
@@ -203,7 +206,7 @@ def audit_admin_action(
     action: str,
     server_name: str,
     status: str,
-    error: Optional[str] = None,
+    error: str | None = None,
     **kwargs: Any,
 ) -> None:
     """
@@ -233,7 +236,7 @@ def audit_credential_access(
     action: str,
     credential_key: str,
     status: str,
-    error: Optional[str] = None,
+    error: str | None = None,
     **kwargs: Any,
 ) -> None:
     """
@@ -263,9 +266,9 @@ def audit_config_change(
     action: str,
     config_name: str,
     status: str,
-    old_value: Optional[str] = None,
-    new_value: Optional[str] = None,
-    error: Optional[str] = None,
+    old_value: str | None = None,
+    new_value: str | None = None,
+    error: str | None = None,
     **kwargs: Any,
 ) -> None:
     """
