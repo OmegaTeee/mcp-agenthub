@@ -20,11 +20,18 @@ from typing import Any
 from pydantic import BaseModel
 
 from router.cache import EnhancementCache
+from router.config.settings import get_settings
 from router.enhancement.ollama import (
     OllamaClient,
     OllamaConfig,
     OllamaConnectionError,
     OllamaError,
+)
+from router.enhancement.ollama_openai import (
+    OllamaOpenAIClient,
+    OpenAICompatConfig,
+    OllamaOpenAIConnectionError,
+    OllamaOpenAIError,
 )
 from router.resilience import (
     CircuitBreaker,
@@ -82,6 +89,9 @@ class EnhancementService:
         print(result.enhanced)
     """
 
+    # Type annotation for client that can be either API type
+    _ollama: OllamaClient | OllamaOpenAIClient
+
     def __init__(
         self,
         rules_path: str | Path | None = None,
@@ -102,8 +112,26 @@ class EnhancementService:
         self._rules: dict[str, EnhancementRule] = {}
         self._default_rule = EnhancementRule()
 
-        # Components
-        self._ollama = OllamaClient(ollama_config)
+        # Determine which Ollama API to use
+        settings = get_settings()
+        self._api_mode = settings.ollama_api_mode
+
+        # Components - instantiate appropriate Ollama client
+        if self._api_mode == "openai":
+            # Use OpenAI-compatible API
+            openai_config = OpenAICompatConfig(
+                base_url=ollama_config.base_url.rstrip("/api") + "/v1" if ollama_config else "http://localhost:11434/v1",
+                timeout=ollama_config.timeout if ollama_config else 30.0,
+                max_retries=ollama_config.max_retries if ollama_config else 2,
+                retry_delay=ollama_config.retry_delay if ollama_config else 1.0,
+            )
+            self._ollama = OllamaOpenAIClient(openai_config)
+            logger.info("Using OpenAI-compatible Ollama API")
+        else:
+            # Use native Ollama API (default)
+            self._ollama = OllamaClient(ollama_config)
+            logger.info("Using native Ollama API")
+
         self._cache = EnhancementCache(max_size=cache_max_size, default_ttl=cache_ttl)
         self._circuit_breaker = CircuitBreaker(
             "ollama",
@@ -138,6 +166,9 @@ class EnhancementService:
 
     def _load_rules(self) -> None:
         """Load enhancement rules from JSON file."""
+        if not self.rules_path:
+            return
+
         try:
             with open(self.rules_path) as f:
                 data = json.load(f)
@@ -245,15 +276,26 @@ class EnhancementService:
 
         # Call Ollama
         try:
-            response = await self._ollama.generate(
-                model=rule.model,
-                prompt=prompt,
-                system=rule.system_prompt,
-                temperature=rule.temperature,
-                max_tokens=rule.max_tokens,
-            )
-
-            enhanced = response.response.strip()
+            # Call appropriate API based on mode
+            if isinstance(self._ollama, OllamaOpenAIClient):
+                # OpenAI-compatible API - use chat completion format
+                enhanced = await self._ollama.generate_from_prompt(
+                    model=rule.model,
+                    prompt=prompt,
+                    system=rule.system_prompt,
+                    temperature=rule.temperature,
+                    max_tokens=rule.max_tokens,
+                )
+            else:
+                # Native API - use generate endpoint
+                response = await self._ollama.generate(
+                    model=rule.model,
+                    prompt=prompt,
+                    system=rule.system_prompt,
+                    temperature=rule.temperature,
+                    max_tokens=rule.max_tokens,
+                )
+                enhanced = response.response.strip()
 
             # Record success
             self._circuit_breaker.record_success()
@@ -266,7 +308,7 @@ class EnhancementService:
                 model=rule.model,
             )
 
-            logger.debug(f"Enhanced prompt with {rule.model}")
+            logger.debug(f"Enhanced prompt with {rule.model} (API: {self._api_mode})")
             return EnhancementResult(
                 original=prompt,
                 enhanced=enhanced,
@@ -274,7 +316,7 @@ class EnhancementService:
                 enhanced_by_llm=True,
             )
 
-        except OllamaConnectionError as e:
+        except (OllamaConnectionError, OllamaOpenAIConnectionError) as e:
             self._circuit_breaker.record_failure(e)
             logger.warning(f"Ollama connection failed: {e}")
             return EnhancementResult(
@@ -283,7 +325,7 @@ class EnhancementService:
                 error=str(e),
             )
 
-        except OllamaError as e:
+        except (OllamaError, OllamaOpenAIError) as e:
             self._circuit_breaker.record_failure(e)
             logger.error(f"Ollama error: {e}")
             return EnhancementResult(

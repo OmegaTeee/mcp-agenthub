@@ -21,6 +21,7 @@ class Settings(BaseSettings):
     ollama_port: int = 11434
     ollama_model: str = "llama3.2:3b"
     ollama_timeout: int = 30
+    ollama_api_mode: str = "native"  # "native" or "openai" - API format to use
 
     # Cache
     cache_max_size: int = 1000
