@@ -9,6 +9,7 @@
     "@upstash/context7-mcp": "latest",
     "@wonderwhy-er/desktop-commander": "latest",
     "deepseek-reasoner-mcp": "latest",
-    "mcp-fetch": "^0.1.6"
+    "mcp-fetch": "^0.1.6",
+    "mcp-tools-for-obsidian": "git+https://github.com/jacksteamdev/obsidian-mcp-tools.git"
   }
 }
