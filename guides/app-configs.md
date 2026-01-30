@@ -27,15 +27,18 @@ Each app needs minimal configuration to connect to the router at `localhost:9090
 {
   "mcpServers": {
     "agenthub": {
-      "command": "localhost",
-      "args": ["9090"],
-      "type": "stdio",
-      "disabled": false,
-      "alwaysAllow": [
-        "resources/read",
-        "resources/list",
-        "tools/list",
-        "tools/call"
+      "command": "curl",
+      "args": [
+        "-s",
+        "-X",
+        "POST",
+        "http://localhost:9090/mcp/context7/tools/call",
+        "-H",
+        "Content-Type: application/json",
+        "-H",
+        "X-Client-Name: claude-desktop",
+        "-d",
+        "@-"
       ]
     }
   }
@@ -57,10 +60,19 @@ cp ~/Library/Application\ Support/Claude/claude_desktop_config.json \
 
 # Use `jq` to merge new server (or edit manually)
 jq '.mcpServers.agenthub = {
-  "command": "localhost",
-  "args": ["9090"],
-  "type": "stdio",
-  "disabled": false
+  "command": "curl",
+  "args": [
+    "-s",
+    "-X",
+    "POST",
+    "http://localhost:9090/mcp/context7/tools/call",
+    "-H",
+    "Content-Type: application/json",
+    "-H",
+    "X-Client-Name: claude-desktop",
+    "-d",
+    "@-"
+  ]
 }' ~/Library/Application\ Support/Claude/claude_desktop_config.json > /tmp/config.json && \
 mv /tmp/config.json ~/Library/Application\ Support/Claude/claude_desktop_config.json
 ```
@@ -306,10 +318,19 @@ echo "Configuring Claude Desktop..."
 CLAUDE_CONFIG="$HOME/Library/Application Support/Claude/claude_desktop_config.json"
 if [ -f "$CLAUDE_CONFIG" ]; then
   jq '.mcpServers.agenthub = {
-    "command": "localhost",
-    "args": ["9090"],
-    "type": "stdio",
-    "disabled": false
+    "command": "curl",
+    "args": [
+      "-s",
+      "-X",
+      "POST",
+      "http://localhost:9090/mcp/context7/tools/call",
+      "-H",
+      "Content-Type: application/json",
+      "-H",
+      "X-Client-Name: claude-desktop",
+      "-d",
+      "@-"
+    ]
   }' "$CLAUDE_CONFIG" > /tmp/claude.json && mv /tmp/claude.json "$CLAUDE_CONFIG"
   echo "✓ Claude Desktop configured"
 else

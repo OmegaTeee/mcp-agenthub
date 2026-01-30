@@ -1,0 +1,16 @@
+{
+  "servers": [
+    {
+      "id": "agenthub",
+      "name": "AgentHub",
+      "url": "http://localhost:9090",
+      "type": "http",
+      "enabled": true,
+      "headers": {
+        "X-Client-Name": "raycast"
+      },
+      "retries": 3,
+      "timeout": 15000
+    }
+  ]
+}

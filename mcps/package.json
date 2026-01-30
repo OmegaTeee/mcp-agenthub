@@ -4,12 +4,12 @@
   "description": "Centralized MCP (Model Context Protocol) servers for AgentHub",
   "private": true,
   "dependencies": {
+    "@modelcontextprotocol/inspector": "latest",
     "@modelcontextprotocol/server-memory": "latest",
     "@modelcontextprotocol/server-sequential-thinking": "latest",
     "@upstash/context7-mcp": "latest",
     "@wonderwhy-er/desktop-commander": "latest",
     "deepseek-reasoner-mcp": "latest",
-    "mcp-fetch": "^0.1.6",
-    "mcp-tools-for-obsidian": "git+https://github.com/jacksteamdev/obsidian-mcp-tools.git"
+    "mcp-fetch": "latest"
   }
 }
