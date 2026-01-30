@@ -469,4 +469,3 @@ After configuring, verify each app:
 - **launchagent-setup.md** — Background service setup
 - **comparison-table.md** — AI Agent Hub vs alternatives
 
-

@@ -109,6 +109,21 @@
       >
         <div class="loading">Loading activity</div>
       </div>
+
+      <!-- User Guides -->
+      <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+          <h2>📚 User Guides</h2>
+        </div>
+        <div
+          id="guides-section"
+          hx-get="/dashboard/guides-partial"
+          hx-trigger="load"
+          hx-swap="innerHTML"
+        >
+          <div class="loading">Loading guides...</div>
+        </div>
+      </div>
     </div>
 
     <script>
@@ -164,6 +179,37 @@
       document.body.addEventListener("htmx:responseError", function (evt) {
         if (evt.detail.pathInfo.requestPath.includes("/actions/")) {
           showToast("Request failed. Please try again.", "error");
+        }
+      });
+
+      // Guide modal management
+      let currentGuideModal = null;
+
+      function openGuideModal(filename) {
+        // Create modal container if it doesn't exist
+        if (!currentGuideModal) {
+          currentGuideModal = document.createElement('div');
+          currentGuideModal.id = 'guide-modal-container';
+          document.body.appendChild(currentGuideModal);
+        }
+
+        // Fetch and display guide content
+        htmx.ajax('GET', `/dashboard/guides/view/${filename}`, {
+          target: '#guide-modal-container',
+          swap: 'innerHTML'
+        });
+      }
+
+      function closeGuideModal() {
+        if (currentGuideModal) {
+          currentGuideModal.innerHTML = '';
+        }
+      }
+
+      // Close modal on Escape key
+      document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && currentGuideModal && currentGuideModal.innerHTML) {
+          closeGuideModal();
         }
       });
     </script>

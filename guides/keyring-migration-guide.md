@@ -262,7 +262,7 @@ github_api_key                 ✗ NOT SET
 
 ## Troubleshooting
 
-### keyring Not Available
+### Keyring Not Available
 ```bash
 # Install keyring
 pip install keyring

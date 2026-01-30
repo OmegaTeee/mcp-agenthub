@@ -73,29 +73,39 @@ agenthub/
 │   └── README.md                # Documentation for wrapper scripts
 ├── templates/              # Jinja2 templates for dashboard
 ├── tests/                  # Pytest test suite
-├── guides/                 # User guides (Keychain, Figma, ComfyUI, etc.)
+├── guides/                 # User guides (setup, integrations, configuration)
+├── docs/                   # Developer documentation (audit, security, architecture)
 ├── docker-compose.yml
 ├── Dockerfile
 └── pyproject.toml
 ```
 
-## Build Documentation
+## Documentation
 
+### Build Documentation
 | Document | Purpose |
 |----------|---------|
 | [BUILD-SPEC.md](BUILD-SPEC.md) | **Consolidated specification** - Architecture, endpoints, components |
 | [BUILD-TASKS.md](BUILD-TASKS.md) | **Step-by-step checklist** - Module-by-module build tasks |
 
-### For AI Agents
-Start with `BUILD-SPEC.md` for architecture understanding, then follow `BUILD-TASKS.md` sequentially.
-
 ### User Guides
-See `guides/` for integration guides:
-- [Getting Started](guides/getting-started.md)
-- [Keychain Setup](guides/keychain-setup.md)
-- [LaunchAgent Setup](guides/launchagent-setup.md)
-- [Figma Integration](guides/figma-integration.md)
-- [ComfyUI Integration](guides/comfyui-integration.md)
+See **[guides/](guides/)** for user-facing documentation:
+- [Getting Started](guides/getting-started.md) - Quick start and verification
+- [Keychain Setup](guides/keychain-setup.md) - Secure credential storage
+- [LaunchAgent Setup](guides/launchagent-setup.md) - Background service setup
+- [App Configs](guides/app-configs.md) - Claude Desktop, VS Code, Raycast, Obsidian
+- [Figma Integration](guides/figma-integration.md) - Design-to-code workflows
+- [ComfyUI Integration](guides/comfyui-integration.md) - Image generation workflows
+
+### Developer Documentation
+See **[docs/](docs/)** for technical documentation:
+- [Audit System](docs/audit/AUDIT-IMPLEMENTATION-COMPLETE.md) - Production audit infrastructure (Security Score: 9.0/10)
+- [Keyring Integration](KEYRING-INTEGRATION-COMPLETE.md) - Credential management implementation
+- [Dashboard](DASHBOARD-IMPROVEMENTS.md) - Real-time monitoring UI
+- [Security](SECURITY-FIXES.md) - Security improvements and fixes
+
+### For AI Agents
+Start with `BUILD-SPEC.md` for architecture understanding, then follow `BUILD-TASKS.md` sequentially
 
 ## Key Features
 

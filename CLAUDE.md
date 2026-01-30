@@ -46,6 +46,11 @@ This is a **modular monolith** built with FastAPI. The main package is `router/`
 | `dashboard/` | HTMX observability UI |
 | `pipelines/` | Workflow orchestration (documentation generation) |
 | `clients/` | Config generators for Claude Desktop, VS Code, Raycast |
+| `middleware/` | Audit context, activity logging, persistent storage |
+| `audit.py` | Structured audit logging with security alerts |
+| `security_alerts.py` | Real-time anomaly detection and alerting |
+| `audit_integrity.py` | Tamper detection with SHA256 checksums |
+| `keyring_manager.py` | Credential management with macOS Keychain |
 
 ### Request Flow
 
@@ -87,3 +92,45 @@ POST /pipelines/documentation   Generate docs from codebase
 - Use `logging` module, not `print()`
 - Avoid global state; use dependency injection
 - Never hardcode config; use Settings class
+
+## Audit & Security
+
+**Security Score: 9.0/10** - Production-grade audit infrastructure with compliance-ready logging.
+
+### Structured Audit Logging
+All security-relevant operations are logged with structured JSON:
+```python
+from router.audit import audit_admin_action, audit_credential_access
+
+# Dashboard actions
+audit_admin_action(action="start", server_name="fetch", status="success")
+
+# Credential access
+audit_credential_access(action="get", credential_key="api_key", status="success")
+```
+
+### Audit Context Propagation
+Context is automatically captured via middleware using `contextvars`:
+- `request_id` - UUID for request correlation
+- `client_id` - From X-Client-ID header
+- `client_ip` - Remote IP address (respects X-Forwarded-For)
+
+### Security Alerts
+Real-time anomaly detection integrated into audit events:
+- Repeated failures (3+ in 5 min)
+- Excessive credential access (5+ in 1 min)
+- Credential probing attempts
+- Configuration changes
+
+Alerts are automatically checked on every audit event.
+
+### Persistent Activity Log
+SQLite-backed activity log stores HTTP request history with full audit context.
+Query API: `GET /audit/activity?client_id=admin&limit=50`
+
+### Documentation
+- **User Guides**: `guides/` - Setup, configuration, integrations
+- **Developer Docs**: `docs/` - Architecture, audit system, security
+- **Audit Implementation**: `docs/audit/AUDIT-IMPLEMENTATION-COMPLETE.md`
+
+For detailed audit system documentation, see `docs/audit/`

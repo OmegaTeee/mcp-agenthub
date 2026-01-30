@@ -23,6 +23,9 @@ structlog>=25.0.0
 # Async SQLite for persistent activity log
 aiosqlite>=0.22.0
 
+# Markdown rendering for dashboard guides
+markdown2>=2.4.0
+
 # Optional: Vector cache (Phase 2.1)
 # qdrant-client>=1.7.0
 

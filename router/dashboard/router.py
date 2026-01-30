@@ -13,6 +13,7 @@ import re
 from pathlib import Path
 from typing import Any, Callable
 
+import markdown2
 from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
@@ -145,6 +146,149 @@ def create_dashboard_router(
                 "activity": activity,
             },
         )
+
+    @router.get("/guides-partial", response_class=HTMLResponse)
+    async def guides_partial(request: Request):
+        """HTMX partial: User guides list."""
+        # Get guides directory
+        guides_dir = Path(__file__).parent.parent.parent / "guides"
+
+        if not guides_dir.exists():
+            return templates.TemplateResponse(
+                "partials/guides.html",
+                {
+                    "request": request,
+                    "guides": [],
+                },
+            )
+
+        # Read index.md to get descriptions (if available)
+        descriptions = {}
+        index_file = guides_dir / "index.md"
+        if index_file.exists():
+            # Parse index.md for descriptions
+            # Simple parsing: look for lines like "- `filename.md` — Description"
+            content = index_file.read_text()
+            for line in content.split('\n'):
+                if line.strip().startswith('-') and '.md' in line:
+                    # Extract filename and description
+                    parts = line.split('—') if '—' in line else line.split('-', 1)
+                    if len(parts) >= 2:
+                        # Get filename from first part (look for .md)
+                        filename_match = re.search(r'([a-z0-9_-]+\.md)', parts[0], re.IGNORECASE)
+                        if filename_match:
+                            filename = filename_match.group(1)
+                            desc = parts[1].strip()
+                            descriptions[filename] = desc
+
+        # Scan for .md files
+        guides = []
+        for md_file in sorted(guides_dir.glob("*.md")):
+            # Get file stats
+            stat = md_file.stat()
+            size_kb = int(stat.st_size / 1024)
+
+            # Extract title from first H1 or use filename
+            title = md_file.stem.replace('-', ' ').replace('_', ' ').title()
+            try:
+                content = md_file.read_text(encoding='utf-8')
+                # Look for first H1 (# Title)
+                for line in content.split('\n'):
+                    if line.startswith('# '):
+                        title = line[2:].strip()
+                        break
+            except Exception:
+                pass  # Use default title from filename
+
+            guides.append({
+                "filename": md_file.name,
+                "title": title,
+                "description": descriptions.get(md_file.name, ""),
+                "size_kb": size_kb,
+            })
+
+        # Sort: index.md first, then alphabetically
+        guides.sort(key=lambda g: (g["filename"] != "index.md", g["title"].lower()))
+
+        return templates.TemplateResponse(
+            "partials/guides.html",
+            {
+                "request": request,
+                "guides": guides,
+            },
+        )
+
+    @router.get("/guides/view/{filename}", response_class=HTMLResponse)
+    async def guide_view(request: Request, filename: str):
+        """View a specific guide with rendered markdown."""
+        # Validate filename (security: prevent path traversal)
+        if not re.match(r'^[a-zA-Z0-9_-]+\.md$', filename):
+            return JSONResponse(
+                status_code=400,
+                content={"error": "Invalid filename format"}
+            )
+
+        # Get guides directory
+        guides_dir = Path(__file__).parent.parent.parent / "guides"
+        guide_file = guides_dir / filename
+
+        # Ensure file exists and is within guides directory
+        try:
+            guide_file = guide_file.resolve()
+            guides_dir = guides_dir.resolve()
+
+            if not str(guide_file).startswith(str(guides_dir)):
+                return JSONResponse(
+                    status_code=403,
+                    content={"error": "Access denied"}
+                )
+
+            if not guide_file.exists() or not guide_file.is_file():
+                return JSONResponse(
+                    status_code=404,
+                    content={"error": "Guide not found"}
+                )
+        except Exception:
+            return JSONResponse(
+                status_code=400,
+                content={"error": "Invalid file path"}
+            )
+
+        # Read and render markdown
+        try:
+            content = guide_file.read_text(encoding='utf-8')
+
+            # Extract title from first H1 or use filename
+            title = filename.replace('-', ' ').replace('_', ' ').replace('.md', '').title()
+            for line in content.split('\n'):
+                if line.startswith('# '):
+                    title = line[2:].strip()
+                    break
+
+            # Render markdown to HTML
+            html_content = markdown2.markdown(
+                content,
+                extras=[
+                    "fenced-code-blocks",
+                    "tables",
+                    "header-ids",
+                    "task_list",
+                ]
+            )
+
+            return templates.TemplateResponse(
+                "partials/guide-view.html",
+                {
+                    "request": request,
+                    "title": title,
+                    "content": html_content,
+                },
+            )
+        except Exception as e:
+            return JSONResponse(
+                status_code=500,
+                content={"error": f"Failed to render guide: {str(e)}"}
+            )
 
     def _validate_server_name(server: str) -> tuple[bool, str | None]:
         """
