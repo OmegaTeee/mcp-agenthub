@@ -10,8 +10,9 @@ Provides endpoints for the HTMX-powered dashboard:
 """
 
 import re
+from collections.abc import Callable
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 
 import markdown2
 from fastapi import APIRouter, Request

@@ -9,7 +9,7 @@ import asyncio
 import logging
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import aiosqlite
 from pydantic import BaseModel
@@ -22,15 +22,15 @@ logger = logging.getLogger(__name__)
 class ActivityEntry(BaseModel):
     """A single activity log entry."""
 
-    id: Optional[int] = None
+    id: int | None = None
     timestamp: str
     method: str
     path: str
     status: int
     duration: float  # seconds
-    client_id: Optional[str] = None
-    client_ip: Optional[str] = None
-    request_id: Optional[str] = None
+    client_id: str | None = None
+    client_ip: str | None = None
+    request_id: str | None = None
 
 
 class PersistentActivityLog:
@@ -172,11 +172,11 @@ class PersistentActivityLog:
 
     async def query(
         self,
-        method: Optional[str] = None,
-        status_min: Optional[int] = None,
-        status_max: Optional[int] = None,
-        client_id: Optional[str] = None,
-        request_id: Optional[str] = None,
+        method: str | None = None,
+        status_min: int | None = None,
+        status_max: int | None = None,
+        client_id: str | None = None,
+        request_id: str | None = None,
         limit: int = 50,
         offset: int = 0,
     ) -> list[dict[str, Any]]:
@@ -243,10 +243,10 @@ class PersistentActivityLog:
 
     async def count(
         self,
-        method: Optional[str] = None,
-        status_min: Optional[int] = None,
-        status_max: Optional[int] = None,
-        client_id: Optional[str] = None,
+        method: str | None = None,
+        status_min: int | None = None,
+        status_max: int | None = None,
+        client_id: str | None = None,
     ) -> int:
         """
         Count activity entries matching filters.
@@ -339,7 +339,7 @@ class PersistentActivityLog:
 
 
 # Global persistent activity log instance
-persistent_activity_log: Optional[PersistentActivityLog] = None
+persistent_activity_log: PersistentActivityLog | None = None
 
 
 def get_persistent_activity_log(

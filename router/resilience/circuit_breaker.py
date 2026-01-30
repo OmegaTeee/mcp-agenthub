@@ -13,8 +13,9 @@ a service is known to be unhealthy, giving it time to recover.
 import asyncio
 import logging
 import time
+from collections.abc import Callable
 from enum import Enum
-from typing import Any, Callable, TypeVar
+from typing import TypeVar
 
 from pydantic import BaseModel
 

@@ -10,7 +10,6 @@ import json
 import logging
 from datetime import datetime
 from pathlib import Path
-from typing import Optional
 
 from pydantic import BaseModel
 
@@ -91,7 +90,7 @@ class AuditIntegrityManager:
         # Load existing checksums
         checksums = []
         if self.checksum_db.exists():
-            with open(self.checksum_db, "r") as f:
+            with open(self.checksum_db) as f:
                 checksums = [AuditChecksum(**record) for record in json.load(f)]
 
         # Append new checksum
@@ -106,7 +105,7 @@ class AuditIntegrityManager:
 
         logger.info(f"Saved audit checksum: {checksum.sha256[:16]}...")
 
-    def verify_integrity(self) -> tuple[bool, Optional[str]]:
+    def verify_integrity(self) -> tuple[bool, str | None]:
         """
         Verify audit log integrity against last known checksum.
 
@@ -127,7 +126,7 @@ class AuditIntegrityManager:
             self.save_checksum(current)
             return True, "No baseline checksum - created initial checkpoint"
 
-        with open(self.checksum_db, "r") as f:
+        with open(self.checksum_db) as f:
             records = json.load(f)
 
         if not records:
@@ -171,7 +170,7 @@ class AuditIntegrityManager:
         if not self.checksum_db.exists():
             return []
 
-        with open(self.checksum_db, "r") as f:
+        with open(self.checksum_db) as f:
             records = json.load(f)
 
         checksums = [AuditChecksum(**r) for r in records]
@@ -179,7 +178,7 @@ class AuditIntegrityManager:
 
 
 # Global integrity manager (initialized in main.py)
-integrity_manager: Optional[AuditIntegrityManager] = None
+integrity_manager: AuditIntegrityManager | None = None
 
 
 def get_integrity_manager(

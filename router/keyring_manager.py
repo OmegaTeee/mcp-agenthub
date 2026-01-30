@@ -5,7 +5,7 @@ Handles secure credential retrieval for MCP servers.
 """
 
 import logging
-from typing import Any, Dict, Optional
+from typing import Any
 
 from router.audit import audit_credential_access
 
@@ -31,7 +31,7 @@ class KeyringManager:
                 "Install with: pip install keyring"
             )
 
-    def get_credential(self, key: str) -> Optional[str]:
+    def get_credential(self, key: str) -> str | None:
         """
         Retrieve a credential from the keyring.
 
@@ -158,7 +158,7 @@ class KeyringManager:
             )
             return False
 
-    def process_env_config(self, env_config: Dict[str, Any]) -> Dict[str, str]:
+    def process_env_config(self, env_config: dict[str, Any]) -> dict[str, str]:
         """
         Process environment configuration, retrieving values from keyring as needed.
 
@@ -219,7 +219,7 @@ class KeyringManager:
 
 
 # Global instance
-_keyring_manager: Optional[KeyringManager] = None
+_keyring_manager: KeyringManager | None = None
 
 
 def get_keyring_manager(service_name: str = "agenthub") -> KeyringManager:

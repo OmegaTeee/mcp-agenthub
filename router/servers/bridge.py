@@ -135,7 +135,7 @@ class StdioBridge:
             response = await asyncio.wait_for(future, timeout=timeout)
             return response
 
-        except asyncio.TimeoutError:
+        except TimeoutError:
             logger.warning(f"[{self.name}] Timeout waiting for response to {method}")
             raise
         except Exception as e:

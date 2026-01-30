@@ -10,12 +10,11 @@ Handles:
 import asyncio
 import logging
 import os
-import signal
 import time
 from typing import TYPE_CHECKING
 
 from router.keyring_manager import get_keyring_manager
-from router.servers.models import ProcessInfo, ServerConfig, ServerStatus
+from router.servers.models import ProcessInfo, ServerStatus
 
 if TYPE_CHECKING:
     from router.servers.registry import ServerRegistry
@@ -166,7 +165,7 @@ class ProcessManager:
                     await asyncio.wait_for(
                         process.wait(), timeout=self._shutdown_timeout
                     )
-                except asyncio.TimeoutError:
+                except TimeoutError:
                     # Force kill after timeout
                     logger.warning(
                         f"Server {name} did not stop gracefully, force killing"
@@ -243,7 +242,7 @@ class ProcessManager:
                         process.stderr.read(1024), timeout=0.1
                     )
                     stderr_output = stderr_bytes.decode("utf-8", errors="replace")
-                except (asyncio.TimeoutError, Exception):
+                except (TimeoutError, Exception):
                     pass
 
             error_msg = f"Process exited with code {exit_code}"

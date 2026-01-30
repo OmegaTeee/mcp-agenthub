@@ -11,8 +11,6 @@ A centralized MCP router that provides:
 
 import logging
 from contextlib import asynccontextmanager
-from typing import Any
-
 from pathlib import Path
 
 from fastapi import FastAPI, Header, HTTPException, Request
@@ -20,10 +18,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from router.config import Settings, get_settings
-from router.dashboard import create_dashboard_router
-from router.enhancement import EnhancementService
-from router.middleware import ActivityLoggingMiddleware, AuditContextMiddleware
 from router.audit import audit_admin_action, setup_audit_logging
 from router.clients import (
     generate_claude_desktop_config,
@@ -31,6 +25,10 @@ from router.clients import (
     generate_vscode_config,
     generate_vscode_tasks,
 )
+from router.config import get_settings
+from router.dashboard import create_dashboard_router
+from router.enhancement import EnhancementService
+from router.middleware import ActivityLoggingMiddleware, AuditContextMiddleware
 from router.pipelines import DocumentationPipeline
 from router.resilience import CircuitBreakerError, CircuitBreakerRegistry
 from router.servers import (

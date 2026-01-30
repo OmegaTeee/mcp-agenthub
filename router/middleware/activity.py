@@ -5,12 +5,11 @@ Tracks recent requests with method, path, status, and duration.
 Uses both in-memory deque (for quick access) and persistent SQLite storage.
 """
 
-import asyncio
 import logging
 import time
 from collections import deque
 from datetime import datetime
-from typing import Any, Optional
+from typing import Any
 
 from pydantic import BaseModel
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -21,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 # Forward declaration for type hint
 if False:  # TYPE_CHECKING
-    from router.middleware.persistent_activity import PersistentActivityLog
+    pass
 
 
 class ActivityEntry(BaseModel):
@@ -119,7 +118,7 @@ class ActivityLoggingMiddleware(BaseHTTPMiddleware):
     def __init__(
         self,
         app,
-        log: Optional[ActivityLog] = None,
+        log: ActivityLog | None = None,
     ):
         super().__init__(app)
         self._log = log or activity_log
@@ -151,7 +150,6 @@ class ActivityLoggingMiddleware(BaseHTTPMiddleware):
         # Get persistent log lazily to avoid circular dependency
         try:
             from router.middleware.persistent_activity import persistent_activity_log
-            from router.middleware.audit_context import get_audit_context
 
             if persistent_activity_log and persistent_activity_log._initialized:
                 # Await directly to preserve context (SQLite writes are fast)

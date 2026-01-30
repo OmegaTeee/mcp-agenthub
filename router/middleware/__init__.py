@@ -4,7 +4,11 @@ AgentHub Middleware.
 Request logging and activity tracking for the dashboard.
 """
 
-from router.middleware.activity import ActivityLog, ActivityLoggingMiddleware, activity_log
+from router.middleware.activity import (
+    ActivityLog,
+    ActivityLoggingMiddleware,
+    activity_log,
+)
 from router.middleware.audit_context import (
     AuditContextMiddleware,
     get_audit_context,

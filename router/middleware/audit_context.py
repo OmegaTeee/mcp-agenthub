@@ -6,7 +6,6 @@ through async calls using Python contextvars.
 """
 
 import contextvars
-from typing import Optional
 from uuid import uuid4
 
 from starlette.middleware.base import BaseHTTPMiddleware

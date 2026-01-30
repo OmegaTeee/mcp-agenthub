@@ -9,7 +9,7 @@ import logging
 from collections import defaultdict
 from datetime import datetime, timedelta
 from enum import Enum
-from typing import Any, Optional
+from typing import Any
 
 from pydantic import BaseModel
 
@@ -33,8 +33,8 @@ class SecurityAlert(BaseModel):
     alert_type: str
     description: str
     details: dict[str, Any]
-    client_id: Optional[str] = None
-    client_ip: Optional[str] = None
+    client_id: str | None = None
+    client_ip: str | None = None
 
 
 class SecurityAlertManager:
@@ -65,10 +65,10 @@ class SecurityAlertManager:
         action: str,
         status: str,
         resource_name: str,
-        client_id: Optional[str] = None,
-        client_ip: Optional[str] = None,
-        error: Optional[str] = None,
-    ) -> Optional[SecurityAlert]:
+        client_id: str | None = None,
+        client_ip: str | None = None,
+        error: str | None = None,
+    ) -> SecurityAlert | None:
         """
         Check an audit event for suspicious patterns.
 
@@ -123,11 +123,11 @@ class SecurityAlertManager:
         event_type: str,
         action: str,
         resource_name: str,
-        client_id: Optional[str],
-        client_ip: Optional[str],
-        error: Optional[str],
+        client_id: str | None,
+        client_ip: str | None,
+        error: str | None,
         now: datetime,
-    ) -> Optional[SecurityAlert]:
+    ) -> SecurityAlert | None:
         """Check for repeated failed operations."""
         if not client_id:
             return None
@@ -169,10 +169,10 @@ class SecurityAlertManager:
         action: str,
         credential_key: str,
         status: str,
-        client_id: Optional[str],
-        client_ip: Optional[str],
+        client_id: str | None,
+        client_ip: str | None,
         now: datetime,
-    ) -> Optional[SecurityAlert]:
+    ) -> SecurityAlert | None:
         """Check for unusual credential access patterns."""
         if not client_id:
             return None
@@ -231,10 +231,10 @@ class SecurityAlertManager:
         self,
         action: str,
         config_name: str,
-        client_id: Optional[str],
-        client_ip: Optional[str],
+        client_id: str | None,
+        client_ip: str | None,
         now: datetime,
-    ) -> Optional[SecurityAlert]:
+    ) -> SecurityAlert | None:
         """Check for config changes (always alert - high importance)."""
         self._config_changes.append(now)
 
@@ -265,7 +265,7 @@ class SecurityAlertManager:
         )
 
     def get_recent_alerts(
-        self, limit: int = 50, severity: Optional[AlertSeverity] = None
+        self, limit: int = 50, severity: AlertSeverity | None = None
     ) -> list[SecurityAlert]:
         """
         Get recent security alerts.
@@ -306,7 +306,7 @@ class SecurityAlertManager:
 
 
 # Global alert manager
-alert_manager: Optional[SecurityAlertManager] = None
+alert_manager: SecurityAlertManager | None = None
 
 
 def get_alert_manager() -> SecurityAlertManager:
