@@ -2,6 +2,7 @@
   "name": "agenthub-mcps",
   "version": "1.0.0",
   "description": "Centralized MCP (Model Context Protocol) servers for AgentHub",
+  "type": "module",
   "private": true,
   "dependencies": {
     "@modelcontextprotocol/inspector": "latest",

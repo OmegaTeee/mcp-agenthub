@@ -55,6 +55,23 @@ AgentHub provides **action-oriented MCP access** for Raycast, optimized for:
 
 ---
 
+## Example Configurations
+
+AgentHub provides example configurations in `configs/clients/raycast/`:
+
+- **`raycast-mcp-servers.json.example`** - Example MCP server configuration for Raycast
+
+**Quick copy:**
+```bash
+# Copy example to Raycast config directory
+cp ~/.local/share/agenthub/configs/clients/raycast/raycast-mcp-servers.json.example \
+   ~/Library/Application\ Support/com.raycast.macos/mcp-servers.json
+```
+
+See [configs/clients/raycast/README.md](../configs/clients/raycast/README.md) for script commands and shortcuts.
+
+---
+
 ## Installation Steps
 
 ### Step 1: Install Raycast (if needed)

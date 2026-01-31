@@ -57,6 +57,28 @@ AgentHub provides **code-optimized MCP access** for VS Code extensions like Clau
 
 ---
 
+## Example Configurations
+
+AgentHub provides example configurations in `configs/clients/vscode/`:
+
+- **`vscode-settings.json.example`** - Minimal MCP settings for VS Code
+- **`vscode.json`** - Full workspace config with tasks and shortcuts
+
+**Quick copy:**
+```bash
+# Copy example to your workspace
+cp ~/.local/share/agenthub/configs/clients/vscode/vscode-settings.json.example \
+   .vscode/settings.json
+
+# Or use globally
+cp ~/.local/share/agenthub/configs/clients/vscode/vscode-settings.json.example \
+   ~/.vscode/settings.json
+```
+
+See [configs/clients/vscode/README.md](../configs/clients/vscode/README.md) for task definitions and keyboard shortcuts.
+
+---
+
 ## Installation Steps
 
 ### Step 1: Install Claude Code or Cline Extension

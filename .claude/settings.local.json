@@ -33,7 +33,9 @@
       "WebFetch(domain:github.com)",
       "WebFetch(domain:smithery.ai)",
       "WebFetch(domain:www.npmjs.com)",
-      "Read(//Users/visualval/.local/share/agenthub/**)"
+      "Read(//Users/visualval/.local/share/agenthub/**)",
+      "Read(//Users/visualval/Library/Application Support/Claude/**)",
+      "Read(//Users/visualval/Library/Logs/Claude/**)"
     ]
   },
   "enableAllProjectMcpServers": true,

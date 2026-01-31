@@ -58,6 +58,25 @@ Before starting, ensure:
 
 ---
 
+## Example Configurations
+
+AgentHub provides example configurations in `configs/clients/claude/`:
+
+- **`claude-desktop-unified.json`** - ⭐ **Recommended**: Unified MCP bridge (all 7 servers in one)
+- **`claude-desktop-config.json.example`** - Alternative curl-based approach
+- **`claude_desktop_config.json`** - Symlink to your actual config for quick access
+
+**Quick copy:**
+```bash
+# Use the unified bridge (recommended)
+cp ~/.local/share/agenthub/configs/clients/claude/claude-desktop-unified.json \
+   ~/Library/Application\ Support/Claude/claude_desktop_config.json
+```
+
+See [configs/clients/claude/README.md](../configs/clients/claude/README.md) for detailed configuration options.
+
+---
+
 ## Installation Steps
 
 ### Step 1: Locate Claude Desktop Config
@@ -323,6 +342,55 @@ curl http://localhost:9090/audit/activity?limit=10
 # Check dashboard
 open http://localhost:9090/dashboard
 ```
+
+---
+
+## Recommended Settings
+
+### Custom Instructions for Tool Usage
+
+To get the best experience with AgentHub's MCP tools, configure Claude Desktop's custom instructions:
+
+**1. Open Claude Desktop Settings**
+- Click Settings (gear icon) → Custom Instructions
+
+**2. Add Tool Usage Policy**
+
+Recommended instructions:
+
+```
+Tool Usage Policy:
+- Use MCP tools automatically when they're clearly useful for the task
+- Mention when you're accessing tools (e.g., "Using context7 to fetch docs...")
+- Always request explicit permission before modifying system files or data
+- Prefer built-in tools for file operations, documentation lookup, and web requests
+```
+
+**Why This Helps:**
+- **Proactive tool use**: Claude will automatically use tools when appropriate, rather than asking permission each time
+- **Transparency**: You'll know when tools are being accessed
+- **Safety**: System modifications still require explicit permission
+- **Better UX**: Faster workflows with fewer interruptions
+
+**Example:**
+
+Without custom instructions:
+```
+User: "What's the latest React hooks documentation?"
+Claude: "Would you like me to use the context7 tool to look that up?"
+User: "Yes"
+Claude: [uses tool]
+```
+
+With custom instructions:
+```
+User: "What's the latest React hooks documentation?"
+Claude: "Let me use context7 to fetch the latest React documentation...
+[uses tool automatically]
+Here's what I found..."
+```
+
+**Note:** These instructions persist across all conversations and apply only to your Claude Desktop instance.
 
 ---
 

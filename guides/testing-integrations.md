@@ -36,10 +36,16 @@ ollama list | grep -E "(deepseek-r1|qwen3-coder)"
 # Expected: Both models listed
 
 # 4. Clients are configured
+# See example configs in configs/clients/{claude,vscode,raycast}/
 # - Claude Desktop: Check ~/Library/Application Support/Claude/claude_desktop_config.json
-# - VS Code: Check ~/.vscode/settings.json
+# - VS Code: Check ~/.vscode/settings.json or .vscode/settings.json
 # - Raycast: Check ~/Library/Application Support/com.raycast.macos/mcp-servers.json
 ```
+
+**Quick reference for example configs:**
+- Claude Desktop: `~/.local/share/agenthub/configs/clients/claude/`
+- VS Code: `~/.local/share/agenthub/configs/clients/vscode/`
+- Raycast: `~/.local/share/agenthub/configs/clients/raycast/`
 
 ---
 
