@@ -82,7 +82,7 @@ cd ~/.local/share/agenthub/configs/clients/claude
 
 For optimal tool usage experience, add these custom instructions in Claude Desktop settings:
 
-```
+```txt
 Tool Usage Policy:
 - Use MCP tools automatically when they're clearly useful for the task
 - Mention when you're accessing tools (e.g., "Using context7 to fetch docs...")

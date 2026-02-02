@@ -35,7 +35,13 @@
       "WebFetch(domain:www.npmjs.com)",
       "Read(//Users/visualval/.local/share/agenthub/**)",
       "Read(//Users/visualval/Library/Application Support/Claude/**)",
-      "Read(//Users/visualval/Library/Logs/Claude/**)"
+      "Read(//Users/visualval/Library/Logs/Claude/**)",
+      "Bash(code:*)",
+      "Bash(./setup-vscode.sh:*)",
+      "Bash(test:*)",
+      "Bash(osascript:*)",
+      "Bash(open:*)",
+      "Bash(npm search:*)"
     ]
   },
   "enableAllProjectMcpServers": true,

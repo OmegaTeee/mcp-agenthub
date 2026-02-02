@@ -45,16 +45,16 @@ All clients connect to AgentHub's HTTP router at `http://localhost:9090`:
 ```
 ┌─────────────────┐
 │ Claude Desktop  │ ──stdio──> Node MCP Bridge ──┐
-└─────────────────┘                               │
-                                                  ▼
+└─────────────────┘                              │
+                                                 ▼
 ┌─────────────────┐                      ┌──────────────┐
 │ VS Code         │ ──HTTP───────────────> AgentHub     │
 └─────────────────┘                      │ Router       │
                                          │ :9090        │
 ┌─────────────────┐                      └──────────────┘
 │ Raycast         │ ──HTTP (curl)────────┘      │
-└─────────────────┘                              │
-                                                 ▼
+└─────────────────┘                             │
+                                                ▼
                                          7 MCP Servers
                                          (context7, fetch, etc.)
 ```

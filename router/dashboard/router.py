@@ -92,9 +92,9 @@ def create_dashboard_router(
             circuit_breakers.append(
                 {
                     "name": name,
-                    "state": stats.get("state", "unknown"),
-                    "failures": stats.get("failure_count", 0),
-                    "last_failure": stats.get("last_failure_time"),
+                    "state": stats.state.value if hasattr(stats.state, 'value') else str(stats.state),
+                    "failures": stats.failure_count,
+                    "last_failure": stats.last_failure_time,
                 }
             )
 

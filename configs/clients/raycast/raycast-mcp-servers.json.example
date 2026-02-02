@@ -1,16 +1,14 @@
 {
-  "servers": [
-    {
-      "id": "agenthub",
-      "name": "AgentHub",
-      "url": "http://localhost:9090",
-      "type": "http",
-      "enabled": true,
-      "headers": {
-        "X-Client-Name": "raycast"
-      },
-      "retries": 3,
-      "timeout": 15000
+  "mcpServers": {
+    "agenthub": {
+      "args": [
+        "/Users/visualval/.local/share/agenthub/mcps/agenthub-bridge.js"
+      ],
+      "command": "node",
+      "env": {
+        "AGENTHUB_URL": "http://localhost:9090",
+        "CLIENT_NAME": "raycast"
+      }
     }
-  ]
+  }
 }

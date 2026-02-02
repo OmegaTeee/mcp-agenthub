@@ -18,7 +18,7 @@ import {
 const AGENTHUB_URL = process.env.AGENTHUB_URL || 'http://localhost:9090';
 const CLIENT_NAME = process.env.CLIENT_NAME || 'claude-desktop';
 
-// All 7 MCP servers available through AgentHub
+// All 8 MCP servers available through AgentHub
 const SERVERS = [
   'context7',
   'desktop-commander',
@@ -26,7 +26,8 @@ const SERVERS = [
   'memory',
   'deepseek-reasoner',
   'fetch',
-  'obsidian'
+  'obsidian',
+  'duckduckgo'
 ];
 
 /**

@@ -18,7 +18,7 @@ set -euo pipefail
 SERVER_NAME="${1:-}"
 AGENTHUB_URL="${2:-http://localhost:9090}"
 
-if [ -z "$SERVER_NAME" ]; then
+if [[ -z "${SERVER_NAME}" ]]; then
   echo "Error: SERVER_NAME required" >&2
   echo "Usage: $0 <server-name> [agenthub-url]" >&2
   exit 1
@@ -29,13 +29,13 @@ log() {
   echo "[mcp-bridge] $*" >&2
 }
 
-log "Starting MCP stdio bridge for server: $SERVER_NAME"
-log "AgentHub URL: $AGENTHUB_URL"
+log "Starting MCP stdio bridge for server: ${SERVER_NAME}"
+log "AgentHub URL: ${AGENTHUB_URL}"
 
 # Read JSON-RPC from stdin line by line and forward to AgentHub
 while IFS= read -r line; do
   # Skip empty lines
-  if [ -z "$line" ]; then
+  if [[ -z "${line}" ]]; then
     continue
   fi
 
@@ -46,9 +46,9 @@ while IFS= read -r line; do
     "${AGENTHUB_URL}/mcp/${SERVER_NAME}/tools/call" \
     -H "Content-Type: application/json" \
     -H "X-Client-Name: claude-desktop" \
-    -d "$line" 2>&1) || {
+    -d "${line}" 2>&1) || {
     # If curl fails, return JSON-RPC error
-    log "ERROR: curl failed with exit code $?"
+    log "ERROR: curl failed with exit code ${?}"
     echo '{"jsonrpc":"2.0","error":{"code":-32603,"message":"Internal error: AgentHub connection failed"},"id":null}'
     continue
   }
@@ -57,22 +57,22 @@ while IFS= read -r line; do
 
   # Transform FastAPI error responses to JSON-RPC format
   # Claude Desktop expects JSON-RPC 2.0, but AgentHub may return FastAPI errors with "detail" field
-  if echo "$response" | grep -q '"detail"'; then
+  if echo "${response}" | grep -q '"detail"'; then
     log "Detected FastAPI error response, transforming to JSON-RPC format"
 
     # Extract request ID from original request (default to null if not found)
-    request_id=$(echo "$line" | grep -o '"id":[^,}]*' | cut -d: -f2 | tr -d ' ' || echo "null")
+    request_id=$(echo "${line}" | grep -o '"id":[^,}]*' | cut -d: -f2 | tr -d ' ' || echo "null")
 
     # Extract error detail message
-    error_msg=$(echo "$response" | grep -o '"detail":"[^"]*"' | cut -d'"' -f4)
+    error_msg=$(echo "${response}" | grep -o '"detail":"[^"]*"' | cut -d'"' -f4)
 
     # Construct proper JSON-RPC error response
-    response="{\"jsonrpc\":\"2.0\",\"error\":{\"code\":-32001,\"message\":\"$error_msg\"},\"id\":$request_id}"
-    log "Transformed response: $response"
+    response="{\"jsonrpc\":\"2.0\",\"error\":{\"code\":-32001,\"message\":\"${error_msg}\"},\"id\":${request_id}}"
+    log "Transformed response: ${response}"
   fi
 
   # Send response to stdout (back to Claude Desktop)
-  echo "$response"
+  echo "${response}"
 done
 
 log "Bridge terminated"

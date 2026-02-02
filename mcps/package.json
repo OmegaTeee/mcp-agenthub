@@ -10,6 +10,7 @@
     "@modelcontextprotocol/server-sequential-thinking": "latest",
     "@upstash/context7-mcp": "latest",
     "@wonderwhy-er/desktop-commander": "latest",
+    "ddg-mcp-search": "^1.1.0",
     "deepseek-reasoner-mcp": "latest",
     "mcp-fetch": "latest"
   }

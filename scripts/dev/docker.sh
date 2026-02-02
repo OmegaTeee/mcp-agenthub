@@ -48,58 +48,58 @@ EOF
 
 function start_prod() {
     echo -e "${GREEN}Starting AgentHub in production mode...${NC}"
-    docker compose -f "$COMPOSE_FILE" up -d
+    docker compose -f "${COMPOSE_FILE}" up -d
     echo -e "${GREEN}AgentHub started. Dashboard: http://localhost:9090/dashboard${NC}"
 }
 
 function start_dev() {
     echo -e "${YELLOW}Starting AgentHub in development mode (hot reload)...${NC}"
-    docker compose -f "$COMPOSE_FILE" -f "$DEV_COMPOSE_FILE" up
+    docker compose -f "${COMPOSE_FILE}" -f "${DEV_COMPOSE_FILE}" up
 }
 
 function stop_services() {
     echo -e "${YELLOW}Stopping AgentHub...${NC}"
-    docker compose -f "$COMPOSE_FILE" down
+    docker compose -f "${COMPOSE_FILE}" down
     echo -e "${GREEN}AgentHub stopped.${NC}"
 }
 
 function restart_services() {
     echo -e "${YELLOW}Restarting AgentHub...${NC}"
-    docker compose -f "$COMPOSE_FILE" restart
+    docker compose -f "${COMPOSE_FILE}" restart
     echo -e "${GREEN}AgentHub restarted.${NC}"
 }
 
 function show_logs() {
     echo -e "${GREEN}Following logs (Ctrl+C to exit)...${NC}"
-    docker compose -f "$COMPOSE_FILE" logs -f "$SERVICE_NAME"
+    docker compose -f "${COMPOSE_FILE}" logs -f "${SERVICE_NAME}"
 }
 
 function show_logs_tail() {
     echo -e "${GREEN}Last 100 log lines:${NC}"
-    docker compose -f "$COMPOSE_FILE" logs --tail=100 "$SERVICE_NAME"
+    docker compose -f "${COMPOSE_FILE}" logs --tail=100 "${SERVICE_NAME}"
 }
 
 function build_images() {
     echo -e "${GREEN}Building images...${NC}"
-    docker compose -f "$COMPOSE_FILE" build
+    docker compose -f "${COMPOSE_FILE}" build
     echo -e "${GREEN}Build complete.${NC}"
 }
 
 function rebuild_images() {
     echo -e "${YELLOW}Rebuilding images without cache...${NC}"
-    docker compose -f "$COMPOSE_FILE" build --no-cache
+    docker compose -f "${COMPOSE_FILE}" build --no-cache
     echo -e "${GREEN}Rebuild complete.${NC}"
 }
 
 function open_shell() {
-    echo -e "${GREEN}Opening shell in $SERVICE_NAME container...${NC}"
-    docker compose -f "$COMPOSE_FILE" exec "$SERVICE_NAME" bash || \
-        docker compose -f "$COMPOSE_FILE" exec "$SERVICE_NAME" sh
+    echo -e "${GREEN}Opening shell in ${SERVICE_NAME} container...${NC}"
+    docker compose -f "${COMPOSE_FILE}" exec "${SERVICE_NAME}" bash || \
+        docker compose -f "${COMPOSE_FILE}" exec "${SERVICE_NAME}" sh
 }
 
 function check_health() {
     echo -e "${GREEN}Checking service health...${NC}"
-    docker compose -f "$COMPOSE_FILE" ps
+    docker compose -f "${COMPOSE_FILE}" ps
     echo ""
     echo "Health check endpoint:"
     curl -s http://localhost:9090/health | python -m json.tool || echo -e "${RED}Service not responding${NC}"
@@ -109,8 +109,8 @@ function clean_all() {
     echo -e "${RED}This will stop and remove all containers, networks, and volumes.${NC}"
     read -p "Are you sure? (y/N) " -n 1 -r
     echo
-    if [[ $REPLY =~ ^[Yy]$ ]]; then
-        docker compose -f "$COMPOSE_FILE" down -v
+    if [[ ${REPLY} =~ ^[Yy]$ ]]; then
+        docker compose -f "${COMPOSE_FILE}" down -v
         echo -e "${GREEN}Cleanup complete.${NC}"
     else
         echo "Cancelled."
@@ -121,7 +121,7 @@ function clean_images() {
     echo -e "${RED}This will remove AgentHub Docker images.${NC}"
     read -p "Are you sure? (y/N) " -n 1 -r
     echo
-    if [[ $REPLY =~ ^[Yy]$ ]]; then
+    if [[ ${REPLY} =~ ^[Yy]$ ]]; then
         docker rmi agenthub-router:latest agenthub-router:dev || true
         echo -e "${GREEN}Images removed.${NC}"
     else
@@ -130,15 +130,15 @@ function clean_images() {
 }
 
 function show_ps() {
-    docker compose -f "$COMPOSE_FILE" ps
+    docker compose -f "${COMPOSE_FILE}" ps
 }
 
 function run_test() {
     echo -e "${GREEN}Running health check test...${NC}"
     
     # Check if container is running
-    if ! docker compose -f "$COMPOSE_FILE" ps | grep -q "$SERVICE_NAME.*Up"; then
-        echo -e "${RED}Error: $SERVICE_NAME container is not running${NC}"
+    if ! docker compose -f "${COMPOSE_FILE}" ps | grep -q "${SERVICE_NAME}.*Up"; then
+        echo -e "${RED}Error: ${SERVICE_NAME} container is not running${NC}"
         exit 1
     fi
     
