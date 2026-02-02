@@ -551,11 +551,14 @@ async def mcp_proxy(server: str, path: str, request: Request):
     if not config:
         raise HTTPException(404, f"Server {server} not found")
 
-    # Check circuit breaker
+    # Check circuit breaker before attempting connection
+    # This prevents cascading failures by failing fast when server is known unhealthy
     breaker = circuit_breakers.get(server)
     try:
         breaker.check()
     except CircuitBreakerError as e:
+        # Circuit is OPEN - return JSON-RPC error immediately without hitting the server
+        # Client can use retry_after to know when to try again
         return {
             "jsonrpc": "2.0",
             "error": {
@@ -566,17 +569,20 @@ async def mcp_proxy(server: str, path: str, request: Request):
             "id": None,
         }
 
-    # Check server status
+    # Check server status - if not running, try auto-start if configured
     info = registry.get_process_info(server)
     if not info or info.status != ServerStatus.RUNNING:
-        # Auto-start if configured
+        # Auto-start is a convenience feature for on-demand MCP servers
+        # This allows clients to call servers without manually starting them first
         if config.auto_start:
             try:
                 await supervisor.start_server(server)
             except Exception as e:
+                # Record failure to prevent repeated auto-start attempts (circuit breaker)
                 breaker.record_failure(e)
                 raise HTTPException(503, f"Failed to auto-start server: {e}")
         else:
+            # Server must be started manually via POST /servers/{name}/start
             raise HTTPException(503, f"Server {server} is not running")
 
     # Get the stdio bridge
@@ -590,18 +596,30 @@ async def mcp_proxy(server: str, path: str, request: Request):
     except Exception:
         body = {}
 
-    # Route based on path
+    # Route the JSON-RPC request through the stdio bridge
     try:
+        # Extract method from JSON-RPC body, fall back to path if not specified
+        # This supports both: POST /mcp/server/tools/call with method in body
+        # or POST /mcp/server/tools.call with method in path
         method = body.get("method", path.replace("/", "."))
         params = body.get("params", {})
 
+        # Send request through stdio bridge (stdin/stdout communication)
         response = await bridge.send(method, params)
+
+        # Record success to reset circuit breaker failure count
+        # After success_threshold successes, circuit transitions HALF_OPEN → CLOSED
         breaker.record_success()
         return response
 
     except Exception as e:
+        # Record failure to potentially open circuit breaker after failure_threshold
+        # This protects against cascading failures when MCP server is unhealthy
         breaker.record_failure(e)
         logger.error(f"MCP proxy error for {server}/{path}: {e}")
+
+        # Return JSON-RPC error response (not HTTP error)
+        # Clients expect JSON-RPC format even for failures
         return {
             "jsonrpc": "2.0",
             "error": {"code": -32603, "message": str(e)},

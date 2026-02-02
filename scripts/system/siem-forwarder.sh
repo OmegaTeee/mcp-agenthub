@@ -40,18 +40,18 @@ function forward_to_splunk() {
     HEC_URL="$1"
     HEC_TOKEN="$2"
 
-    echo "[INFO] Forwarding to Splunk HEC: $HEC_URL"
+    echo "[INFO] Forwarding to Splunk HEC: ${HEC_URL}"
 
     # Read audit log and send each line to Splunk
     while IFS= read -r line; do
-        curl -k -X POST "$HEC_URL" \
-            -H "Authorization: Splunk $HEC_TOKEN" \
+        curl -k -X POST "${HEC_URL}" \
+            -H "Authorization: Splunk ${HEC_TOKEN}" \
             -H "Content-Type: application/json" \
-            -d "{\"event\": $line, \"sourcetype\": \"agenthub:audit\"}" \
+            -d "{\"event\": ${line}, \"sourcetype\": \"agenthub:audit\"}" \
             --silent --show-error
 
         echo "." # Progress indicator
-    done < "$AUDIT_LOG"
+    done < "${AUDIT_LOG}"
 
     echo ""
     echo "[INFO] Forwarding complete"
@@ -61,14 +61,14 @@ function forward_to_elastic() {
     ES_URL="$1"
     INDEX="$2"
 
-    echo "[INFO] Forwarding to Elasticsearch: $ES_URL/$INDEX"
+    echo "[INFO] Forwarding to Elasticsearch: ${ES_URL}/${INDEX}"
 
     # Read audit log and bulk index to Elasticsearch
     while IFS= read -r line; do
         # Elasticsearch bulk API format
-        echo "{\"index\":{\"_index\":\"$INDEX\"}}"
-        echo "$line"
-    done < "$AUDIT_LOG" | curl -X POST "$ES_URL/_bulk" \
+        echo "{\"index\":{\"_index\":\"${INDEX}\"}}"
+        echo "${line}"
+    done < "${AUDIT_LOG}" | curl -X POST "${ES_URL}/_bulk" \
         -H "Content-Type: application/x-ndjson" \
         --data-binary @- \
         --silent --show-error
@@ -86,15 +86,15 @@ function forward_to_datadog() {
     # Read audit log and send to Datadog
     while IFS= read -r line; do
         # Add hostname and service tags
-        event=$(echo "$line" | jq -c ". + {\"ddsource\": \"agenthub\", \"service\": \"audit\", \"hostname\": \"$(hostname)\"}")
+        event=$(echo "${line}" | jq -c ". + {\"ddsource\": \"agenthub\", \"service\": \"audit\", \"hostname\": \"$(hostname)\"}")
 
-        curl -X POST "$DD_URL/$DD_API_KEY" \
+        curl -X POST "${DD_URL}/${DD_API_KEY}" \
             -H "Content-Type: application/json" \
-            -d "$event" \
+            -d "${event}" \
             --silent --show-error
 
         echo "." # Progress indicator
-    done < "$AUDIT_LOG"
+    done < "${AUDIT_LOG}"
 
     echo ""
     echo "[INFO] Forwarding complete"
@@ -103,13 +103,13 @@ function forward_to_datadog() {
 function forward_to_syslog() {
     SYSLOG_HOST="$1"
 
-    echo "[INFO] Forwarding to syslog: $SYSLOG_HOST"
+    echo "[INFO] Forwarding to syslog: ${SYSLOG_HOST}"
 
     # Use logger or netcat to send to syslog
     if command -v logger &> /dev/null; then
         while IFS= read -r line; do
-            logger -n "$SYSLOG_HOST" -P 514 -t agenthub "$line"
-        done < "$AUDIT_LOG"
+            logger -n "${SYSLOG_HOST}" -P 514 -t agenthub "${line}"
+        done < "${AUDIT_LOG}"
     else
         echo "[ERROR] logger command not found"
         exit 1
@@ -126,7 +126,7 @@ fi
 
 PLATFORM="$1"
 
-case "$PLATFORM" in
+case "${PLATFORM}" in
     splunk)
         if [[ $# -ne 3 ]]; then
             echo "[ERROR] Usage: $0 splunk <HEC_URL> <HEC_TOKEN>"
@@ -156,7 +156,7 @@ case "$PLATFORM" in
         forward_to_syslog "$2"
         ;;
     *)
-        echo "[ERROR] Unknown platform: $PLATFORM"
+        echo "[ERROR] Unknown platform: ${PLATFORM}"
         usage
         exit 1
         ;;
