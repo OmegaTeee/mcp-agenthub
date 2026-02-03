@@ -36,6 +36,7 @@ ENV/
 .github/
 
 # Documentation (don't need in container)
+docs/
 *.md
 !README.md
 guides/

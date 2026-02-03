@@ -42,7 +42,8 @@
       "Bash(osascript:*)",
       "Bash(open:*)",
       "Bash(npm search:*)",
-      "Bash(./scripts/dev/cleanup.sh:*)"
+      "Bash(./scripts/dev/cleanup.sh:*)",
+      "Read(//Users/visualval/Obsidian/.obsidian/plugins/mcp-tools/**)"
     ]
   },
   "enableAllProjectMcpServers": true,

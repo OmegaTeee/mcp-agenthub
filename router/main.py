@@ -117,6 +117,74 @@ async def lifespan(app: FastAPI):
         await supervisor.stop()
 
 
+def normalize_tool_schema(schema: dict) -> dict:
+    """
+    Normalize tool input schemas to ensure they're valid JSON Schema.
+
+    Some MCP servers return malformed schemas (e.g., missing 'properties' field).
+    This function fixes common issues to prevent client validation warnings.
+
+    Args:
+        schema: Tool input schema (potentially malformed)
+
+    Returns:
+        Normalized schema that passes JSON Schema validation
+    """
+    if not isinstance(schema, dict):
+        return schema
+
+    # If schema has 'type': 'object' but no 'properties', add empty properties
+    if schema.get("type") == "object" and "properties" not in schema:
+        schema = schema.copy()  # Don't mutate original
+        schema["properties"] = {}
+
+    return schema
+
+
+def normalize_mcp_response(response: dict, method: str) -> dict:
+    """
+    Normalize MCP JSON-RPC responses to fix common schema issues.
+
+    Args:
+        response: JSON-RPC response from MCP server
+        method: The method that was called (e.g., "tools/list")
+
+    Returns:
+        Normalized response with fixed schemas
+    """
+    # Only normalize tools/list responses
+    if method != "tools/list" and method != "tools.list":
+        return response
+
+    # Check if response has tools
+    if not isinstance(response, dict):
+        return response
+
+    result = response.get("result")
+    if not result or not isinstance(result, dict):
+        return response
+
+    tools = result.get("tools")
+    if not tools or not isinstance(tools, list):
+        return response
+
+    # Normalize schema for each tool
+    normalized_tools = []
+    for tool in tools:
+        if isinstance(tool, dict) and "inputSchema" in tool:
+            tool = tool.copy()  # Don't mutate original
+            tool["inputSchema"] = normalize_tool_schema(tool["inputSchema"])
+        normalized_tools.append(tool)
+
+    # Return response with normalized tools
+    response = response.copy()
+    result = result.copy()
+    result["tools"] = normalized_tools
+    response["result"] = result
+
+    return response
+
+
 app = FastAPI(
     title="AgentHub Router",
     description="Centralized MCP router with server management, prompt enhancement, and caching",
@@ -606,6 +674,10 @@ async def mcp_proxy(server: str, path: str, request: Request):
 
         # Send request through stdio bridge (stdin/stdout communication)
         response = await bridge.send(method, params)
+
+        # Normalize the response to fix common schema issues from MCP servers
+        # This prevents client validation warnings from malformed schemas
+        response = normalize_mcp_response(response, method)
 
         # Record success to reset circuit breaker failure count
         # After success_threshold successes, circuit transitions HALF_OPEN → CLOSED
