@@ -60,6 +60,10 @@ htmlcov/
 # Docker
 *.log
 
+# Logs directory (keep structure, ignore content)
+logs/*.log
+logs/**/*.log
+
 # Local configs (keep examples, ignore actual)
 configs/*.local.json
 

@@ -41,7 +41,8 @@
       "Bash(test:*)",
       "Bash(osascript:*)",
       "Bash(open:*)",
-      "Bash(npm search:*)"
+      "Bash(npm search:*)",
+      "Bash(./scripts/dev/cleanup.sh:*)"
     ]
   },
   "enableAllProjectMcpServers": true,

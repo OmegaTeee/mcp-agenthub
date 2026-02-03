@@ -1,457 +1,338 @@
 # LaunchAgent Setup Guide
 
-> **For**: Running the AI Agent Hub as a background service on macOS
+> **For**: Running the AgentHub router as a background service on macOS
 
 ---
 
 ## Overview
 
-A **LaunchAgent** is macOS's way of running background services automatically when you log in.
+A **LaunchAgent** makes the AgentHub router start automatically at login and keeps it running in the background.
 
 **Without LaunchAgent:**
-
 - You manually start the router every time
 - If your Mac restarts, router is down
-- Apps can't connect until you start it
+- Claude Desktop can't connect until you start it
 
 **With LaunchAgent:**
-
 - Router starts automatically at login
 - Runs continuously in the background
 - Survives Mac restarts
-- Apps always have it available
+- Claude Desktop always has access to MCP servers
 
 ---
 
-## What We'll Create
+## Quick Setup
 
-A LaunchAgent plist file that:
+The LaunchAgent plist is already created in this repository:
 
-- ✅ Starts the AI Agent Hub at login
-- ✅ Restarts it if it crashes
-- ✅ Logs output for debugging
-- ✅ Handles Keychain access securely
-- ✅ Works with Docker/Colima
+**Template:** [`configs/clients/launch_agents/com.agenthub.router.plist`](../configs/clients/launch_agents/com.agenthub.router.plist)
 
----
-
-## Setup Instructions
-
-### Step 1: Create the LaunchAgent Plist
-
-Create the file: `~/.config/launchagents/com.agenthub.plist`
+### Installation Steps
 
 ```bash
-mkdir -p ~/.config/launchagents
-```
+# 1. Create logs directory
+mkdir -p ~/.local/share/agenthub/logs
 
-Then create `~/.config/launchagents/com.agenthub.plist`:
+# 2. Copy plist to LaunchAgents directory
+cp configs/clients/launch_agents/com.agenthub.router.plist \
+   ~/Library/LaunchAgents/
 
-```xml
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-    <!-- Service identifier -->
-    <key>Label</key>
-    <string>com.agenthub.service</string>
+# 3. Load the LaunchAgent
+launchctl load ~/Library/LaunchAgents/com.agenthub.router.plist
 
-    <!-- Program to run -->
-    <key>ProgramArguments</key>
-    <array>
-        <string>/usr/local/bin/agenthub</string>
-        <string>--config</string>
-        <string>~/.agenthub/config.json</string>
-    </array>
-
-    <!-- Start at login -->
-    <key>RunAtLoad</key>
-    <true/>
-
-    <!-- Keep running, restart if it crashes -->
-    <key>KeepAlive</key>
-    <true/>
-
-    <!-- Wait 10 seconds before restarting if it crashes -->
-    <key>ThrottleInterval</key>
-    <integer>10</integer>
-
-    <!-- Standard output/error logging -->
-    <key>StandardOutPath</key>
-    <string>~/.agenthub/logs/stdout.log</string>
-
-    <key>StandardErrorPath</key>
-    <string>~/.agenthub/logs/stderr.log</string>
-
-    <!-- Environment variables for router -->
-    <key>EnvironmentVariables</key>
-    <dict>
-        <key>PATH</key>
-        <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin</string>
-
-        <key>HOME</key>
-        <string>$HOME</string>
-
-        <!-- Ollama access for local models -->
-        <key>OLLAMA_HOST</key>
-        <string>localhost:11434</string>
-
-        <!-- Docker/Colima socket -->
-        <key>DOCKER_HOST</key>
-        <string>unix://$HOME/.colima/docker.sock</string>
-    </dict>
-
-    <!-- User-level service (runs with your user permissions) -->
-    <key>SessionType</key>
-    <string>Aqua</string>
-
-    <!-- Keychain access: Run with limited system resources -->
-    <key>ProcessType</key>
-    <string>Background</string>
-</dict>
-</plist>
-```
-
-### Step 2: Expand ~ in Plist
-
-macOS doesn't expand `~` in plist files automatically. Use this script:
-
-```bash
-# Create expand script
-cat > ~/.config/launchagents/expand-plist.sh << 'EOF'
-#!/bin/bash
-PLIST_FILE="$HOME/.config/launchagents/com.agenthub.plist"
-
-# Replace ~ with $HOME path
-sed -i '' "s|~|$HOME|g" "$PLIST_FILE"
-EOF
-
-chmod +x ~/.config/launchagents/expand-plist.sh
-
-# Run it
-~/.config/launchagents/expand-plist.sh
-```
-
-**Or do it manually:**
-
-```bash
-# Replace ~ with your actual home directory
-# For example, if HOME=/Users/yourname:
-sed -i '' 's|~|/Users/yourname|g' ~/.config/launchagents/com.agenthub.plist
-```
-
-### Step 3: Register the LaunchAgent
-
-Copy the plist to LaunchAgent directory:
-
-```bash
-cp ~/.config/launchagents/com.agenthub.plist \
-   ~/Library/LaunchAgents/com.agenthub.plist
-```
-
-### Step 4: Load the LaunchAgent
-
-```bash
-# Load (starts the service)
-launchctl load ~/Library/LaunchAgents/com.agenthub.plist
-
-# Verify it's loaded
-launchctl list | grep agenthub
-# Expected output: com.agenthub.service
-```
-
-### Step 5: Create Log Directory
-
-```bash
-mkdir -p ~/.agenthub/logs
-```
-
-### Step 6: Verify It's Running
-
-```bash
-# Check if service is running
-launchctl list com.agenthub.service
-
-# Check logs
-tail -f ~/.agenthub/logs/stdout.log
-tail -f ~/.agenthub/logs/stderr.log
-
-# Test connectivity
+# 4. Verify it's running
 curl http://localhost:9090/health
-# Expected response: { "status": "ok" }
 ```
 
 ---
 
-## Managing the LaunchAgent
+## Configuration Details
 
-### Start the Service
+The LaunchAgent plist configures:
 
-```bash
-launchctl start com.agenthub.service
-```
-
-### Stop the Service
-
-```bash
-launchctl stop com.agenthub.service
-```
-
-### Restart the Service
-
-```bash
-launchctl stop com.agenthub.service && launchctl start com.agenthub.service
-```
-
-### Unload (Disable Auto-Start)
-
-```bash
-launchctl unload ~/Library/LaunchAgents/com.agenthub.plist
-```
-
-### Reload (After Modifying Plist)
-
-```bash
-launchctl unload ~/Library/LaunchAgents/com.agenthub.plist
-launchctl load ~/Library/LaunchAgents/com.agenthub.plist
-```
-
-### View Current Status
-
-```bash
-# Detailed status
-launchctl list com.agenthub.service
-
-# Expected output:
-# {
-#   "Label" = "com.agenthub.service";
-#   "LimitLoadToSessionType" = "Aqua";
-#   "OnDemand" = 0;
-#   "PID" = 12345;
-#   "PercentCPU" = 0.5;
-#   "Program" = "/usr/local/bin/agenthub";
-#   ...
-# }
-```
-
----
-
-## Keychain Access in LaunchAgent
-
-### The Problem
-
-When running as a LaunchAgent, the router needs access to Keychain credentials (API keys, etc.) but can't prompt the user for permission like a foreground app can.
-
-### The Solution
-
-#### Option 1: Unlock Keychain at Login
-
-Add to your login shell config (`~/.zshrc` or `~/.bash_profile`):
-
-```bash
-# Unlock Keychain at login (password-free access)
-/usr/bin/security unlock-keychain -p "$PASSWORD" ~/Library/Keychains/login.keychain-db
-```
-
-**Problem**: Stores password in shell config (risky).
-
-#### Option 2: Use `security` with Always-Allow
-
-```bash
-# Grant permanent "allow all" access to Keychain item
-security add-generic-password \
-  -s "agenthub-context7" \
-  -a "default" \
-  -w "your-token" \
-  -A \
-  ~/Library/Keychains/login.keychain-db
-```
-
-Then manually allow access:
-
-1. First time router accesses, macOS prompts
-2. Click "Allow" → "Always Allow"
-3. Future accesses don't prompt
-
-**This is the recommended approach.**
-
-#### Option 3: Separate Keychain for Router
-
-Create an unlocked keychain just for router:
-
-```bash
-# Create new keychain (password: "router-pass")
-security create-keychain -p "router-pass" ~/Library/Keychains/router.keychain-db
-
-# Add credentials to router keychain
-security add-generic-password \
-  -s "agenthub-context7" \
-  -a "default" \
-  -w "your-token" \
-  ~/Library/Keychains/router.keychain-db
-
-# Unlock router keychain at login (add to shell config)
-security unlock-keychain -p "router-pass" ~/Library/Keychains/router.keychain-db
-```
-
-**Most secure**: Separate password, but requires manual unlock script.
-
-### Recommended: Option 2 + Unlock Script
-
-Combine both approaches:
-
-```bash
-# ~/.zshrc or ~/.bash_profile
-# Unlock Keychain quietly at login (if needed)
-if ! security list-keychains | grep -q login; then
-  security unlock-keychain -p "$KEYCHAIN_PASSWORD" ~/Library/Keychains/login.keychain-db 2>/dev/null
-fi
-```
-
-Then grant always-allow on credentials (see Option 2).
-
----
-
-## Docker/Colima Integration
-
-If your router runs in Docker:
-
-### Update ProgramArguments
-
-Instead of `/usr/local/bin/agenthub`, use:
-
+### Program
 ```xml
 <key>ProgramArguments</key>
 <array>
-    <string>/opt/homebrew/bin/docker</string>
-    <string>compose</string>
-    <string>-f</string>
-    <string>/Users/yourname/.agenthub/docker-compose.yml</string>
-    <string>up</string>
+    <string>/Users/visualval/.local/share/agenthub/.venv/bin/uvicorn</string>
+    <string>router.main:app</string>
+    <string>--host</string>
+    <string>127.0.0.1</string>
+    <string>--port</string>
+    <string>9090</string>
+    <string>--reload</string>
 </array>
 ```
 
-### Update EnvironmentVariables
+- **Command:** `uvicorn` from the virtual environment
+- **App:** `router.main:app` (FastAPI application)
+- **Host:** `127.0.0.1` (localhost only, secure)
+- **Port:** `9090` (AgentHub default)
+- **Reload:** Auto-reload on code changes
+
+### Auto-Start & Resilience
+
+```xml
+<key>RunAtLoad</key>
+<true/>
+
+<key>KeepAlive</key>
+<dict>
+    <key>SuccessfulExit</key>
+    <false/>
+</dict>
+
+<key>ThrottleInterval</key>
+<integer>30</integer>
+```
+
+- **RunAtLoad:** Starts automatically at login
+- **KeepAlive:** Restarts on crashes (but NOT on clean shutdown)
+- **ThrottleInterval:** Waits 30 seconds before restarting (prevents rapid crash loops)
+
+### Logging
+
+```xml
+<key>StandardOutPath</key>
+<string>/Users/visualval/.local/share/agenthub/logs/router-stdout.log</string>
+
+<key>StandardErrorPath</key>
+<string>/Users/visualval/.local/share/agenthub/logs/router-stderr.log</string>
+```
+
+Logs are written to:
+- **stdout:** `~/.local/share/agenthub/logs/router-stdout.log` (access logs, info)
+- **stderr:** `~/.local/share/agenthub/logs/router-stderr.log` (errors, warnings)
+
+### Environment
 
 ```xml
 <key>EnvironmentVariables</key>
 <dict>
     <key>PATH</key>
-    <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin</string>
+    <string>/Users/visualval/.local/share/agenthub/.venv/bin:/opt/homebrew/bin:...</string>
 
-    <key>DOCKER_HOST</key>
-    <string>unix:///Users/yourname/.colima/docker.sock</string>
-
-    <key>HOME</key>
-    <string>/Users/yourname</string>
+    <key>PYTHONPATH</key>
+    <string>/Users/visualval/.local/share/agenthub</string>
 </dict>
 ```
 
-### Ensure Colima Starts First
+- **PATH:** Includes virtual environment and Homebrew binaries
+- **PYTHONPATH:** Set to project root for imports
 
-Add to `~/.zshrc`:
+---
+
+## Managing the Service
+
+### Check Status
 
 ```bash
-# Start Colima if not running
-if ! colima status >/dev/null 2>&1; then
-  colima start
-fi
+# List all LaunchAgents (look for com.agenthub.router)
+launchctl list | grep agenthub
+
+# Check router health
+curl http://localhost:9090/health
 ```
 
-Or create a separate LaunchAgent for Colima that starts before the router.
+### Stop the Router
+
+```bash
+launchctl unload ~/Library/LaunchAgents/com.agenthub.router.plist
+```
+
+### Start the Router
+
+```bash
+launchctl load ~/Library/LaunchAgents/com.agenthub.router.plist
+```
+
+### Restart the Router
+
+```bash
+launchctl unload ~/Library/LaunchAgents/com.agenthub.router.plist && \
+launchctl load ~/Library/LaunchAgents/com.agenthub.router.plist
+```
+
+### View Logs
+
+```bash
+# Standard output (access logs, info)
+tail -f ~/.local/share/agenthub/logs/router-stdout.log
+
+# Standard error (errors, warnings)
+tail -f ~/.local/share/agenthub/logs/router-stderr.log
+
+# Last 50 lines of both
+tail -50 ~/.local/share/agenthub/logs/router-stderr.log
+```
+
+### Disable Auto-Start
+
+```bash
+# Unload and remove
+launchctl unload ~/Library/LaunchAgents/com.agenthub.router.plist
+rm ~/Library/LaunchAgents/com.agenthub.router.plist
+```
 
 ---
 
 ## Troubleshooting
 
-### LaunchAgent Not Starting
+### Router Not Starting
 
 **Check if it's loaded:**
 
 ```bash
-launchctl list com.agenthub.service
-# If not listed, try loading:
-launchctl load ~/Library/LaunchAgents/com.agenthub.plist
+launchctl list | grep agenthub
+# Expected: 6992  0  com.agenthub.router
 ```
 
-### "Label Already exists"
+If not listed:
 
 ```bash
-# Unload first, then load
-launchctl unload ~/Library/LaunchAgents/com.agenthub.plist
-launchctl load ~/Library/LaunchAgents/com.agenthub.plist
+launchctl load ~/Library/LaunchAgents/com.agenthub.router.plist
 ```
 
-### Logs Show Permission Denied
-
-**Check file permissions:**
+### "Label Already Exists"
 
 ```bash
-ls -la ~/.agenthub/
-# Logs directory should be readable/writable by your user
-chmod 755 ~/.agenthub/logs
+# Unload first, then reload
+launchctl unload ~/Library/LaunchAgents/com.agenthub.router.plist
+launchctl load ~/Library/LaunchAgents/com.agenthub.router.plist
+```
+
+### Port 9090 Already in Use
+
+```bash
+# Find what's using port 9090
+lsof -i :9090
+
+# Kill the process if it's a stuck router
+kill <PID>
+
+# Then restart
+launchctl unload ~/Library/LaunchAgents/com.agenthub.router.plist
+launchctl load ~/Library/LaunchAgents/com.agenthub.router.plist
 ```
 
 ### Router Crashes Repeatedly
 
-**Check crash logs:**
+**Check error logs:**
 
 ```bash
-tail -100 ~/.agenthub/logs/stderr.log
+tail -100 ~/.local/share/agenthub/logs/router-stderr.log
 ```
 
 **Common causes:**
 
-- Ollama not running (install: `brew install ollama`)
-- Port 9090 already in use: `lsof -i :9090`
-- Config file path incorrect: verify `~/.agenthub/config.json` exists
+- **Ollama not running:** `brew install ollama && brew services start ollama`
+- **Python dependencies missing:** `cd ~/.local/share/agenthub && source .venv/bin/activate && pip install -r requirements.txt`
+- **Port conflict:** See "Port 9090 Already in Use" above
+- **Permission issues:** `chmod 755 ~/.local/share/agenthub/logs`
 
-### Keychain "Permission Denied"
+### MCP Servers Not Starting
 
 ```bash
-# Unlock Keychain manually
-security unlock-keychain ~/Library/Keychains/login.keychain-db
+# Check server status
+curl http://localhost:9090/servers | jq '.servers[] | {name, status, pid}'
 
-# Then restart router
-launchctl restart com.agenthub.service
+# Start a specific server
+curl -X POST http://localhost:9090/servers/<server-name>/start
+
+# Check dashboard
+open http://localhost:9090/dashboard
 ```
 
-### Can't Connect to localhost:9090
+### Logs Growing Too Large
 
 ```bash
-# Check if router is actually running
-ps aux | grep agenthub
+# Check log sizes
+du -sh ~/.local/share/agenthub/logs/*
 
-# Check if port is listening
-lsof -i :9090
+# Rotate logs (keep last 1000 lines)
+tail -1000 ~/.local/share/agenthub/logs/router-stdout.log > /tmp/stdout.log
+mv /tmp/stdout.log ~/.local/share/agenthub/logs/router-stdout.log
 
-# Test connection
-curl -v http://localhost:9090/health
+tail -1000 ~/.local/share/agenthub/logs/router-stderr.log > /tmp/stderr.log
+mv /tmp/stderr.log ~/.local/share/agenthub/logs/router-stderr.log
 ```
 
 ---
 
-## Plist Reference
+## Updating the Configuration
 
-**Key fields explained:**
+If you need to change the plist (e.g., update paths, change port):
 
-| Key                    | Purpose                                                |
-| ---------------------- | ------------------------------------------------------ |
-| `Label`                | Unique identifier (must match com.agenthub.\*)         |
-| `ProgramArguments`     | Command to execute (array, first item is program)      |
-| `RunAtLoad`            | Start at login (`true` = yes)                          |
-| `KeepAlive`            | Restart if crashes (`true` = yes)                      |
-| `ThrottleInterval`     | Seconds before restarting (prevents rapid crash loops) |
-| `StandardOutPath`      | Where stdout goes                                      |
-| `StandardErrorPath`    | Where stderr goes                                      |
-| `EnvironmentVariables` | Dict of env vars for the process                       |
-| `SessionType`          | `Aqua` = user session, `Background` = system           |
-| `ProcessType`          | `Background` = lower priority, `Standard` = normal     |
+```bash
+# 1. Edit the template
+nano configs/clients/launch_agents/com.agenthub.router.plist
+
+# 2. Copy to LaunchAgents
+cp configs/clients/launch_agents/com.agenthub.router.plist \
+   ~/Library/LaunchAgents/
+
+# 3. Reload
+launchctl unload ~/Library/LaunchAgents/com.agenthub.router.plist
+launchctl load ~/Library/LaunchAgents/com.agenthub.router.plist
+```
+
+---
+
+## Integration with Claude Desktop
+
+Once the LaunchAgent is running, Claude Desktop can connect via the MCP bridge:
+
+**Claude Desktop Config:** `~/Library/Application Support/Claude/claude_desktop_config.json`
+
+```json
+{
+  "mcpServers": {
+    "agenthub": {
+      "command": "node",
+      "args": [
+        "/Users/visualval/.local/share/agenthub/mcps/agenthub-bridge.js"
+      ],
+      "env": {
+        "AGENTHUB_URL": "http://localhost:9090",
+        "CLIENT_NAME": "claude-desktop"
+      }
+    }
+  }
+}
+```
+
+The bridge connects to the router at `localhost:9090` and exposes all 8 MCP servers as tools.
 
 ---
 
 ## See Also
 
-- **keychain-setup.md** — Credential management
-- **app-configs.md** — Per-app configuration
-- **comparison-table.md** — Decision framework
+- **[keychain-setup.md](keychain-setup.md)** — Credential management for MCP servers
+- **[claude-desktop-integration.md](claude-desktop-integration.md)** — Complete Claude Desktop setup
+- **[testing-integrations.md](testing-integrations.md)** — Testing MCP server integrations
+
+---
+
+## Quick Reference
+
+```bash
+# Status
+launchctl list | grep agenthub
+curl http://localhost:9090/health
+
+# Start
+launchctl load ~/Library/LaunchAgents/com.agenthub.router.plist
+
+# Stop
+launchctl unload ~/Library/LaunchAgents/com.agenthub.router.plist
+
+# Restart
+launchctl unload ~/Library/LaunchAgents/com.agenthub.router.plist && \
+launchctl load ~/Library/LaunchAgents/com.agenthub.router.plist
+
+# View logs
+tail -f ~/.local/share/agenthub/logs/router-stderr.log
+
+# Dashboard
+open http://localhost:9090/dashboard
+```
