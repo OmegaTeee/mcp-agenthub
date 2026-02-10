@@ -26,12 +26,18 @@ venv/
 ENV/
 env/
 
+# AI generated files
+*.ai
+*.gen.*
+.agentic-tools-mcp/
+
 # IDE
 .idea/
 .vscode/
 *.swp
 *.swo
 *~
+.config/
 
 # Environment variables
 .env
@@ -79,3 +85,20 @@ qdrant_data/
 *.tmp
 *.temp
 /tmp/
+.claude/agents/kfc/spec-design.md
+.claude/agents/kfc/spec-impl.md
+.claude/agents/kfc/spec-judge.md
+.claude/agents/kfc/spec-requirements.md
+.claude/agents/kfc/spec-system-prompt-loader.md
+.claude/agents/kfc/spec-tasks.md
+.claude/agents/kfc/spec-test.md
+.gitignore
+.claude/steering/product.md
+.claude/steering/structure.md
+.claude/steering/tech.md
+.claude/settings/kfc-settings.json
+.gitignore
+.claude/system-prompts/spec-workflow-starter.md
+.config/.markdownlint-cli2.jsonc
+.claude/settings.json
+.config/.markdownlint-cli2.jsonc

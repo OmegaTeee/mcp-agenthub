@@ -63,6 +63,7 @@ Infrastructure and logging:
 ### Common Tasks
 
 **Add a new MCP server:**
+
 ```bash
 # Edit the registry
 vim configs/mcp-servers.json
@@ -80,6 +81,7 @@ vim configs/mcp-servers.json
 ```
 
 **Change enhancement model:**
+
 ```bash
 # Edit enhancement rules
 vim configs/enhancement-rules.json
@@ -94,6 +96,7 @@ vim configs/enhancement-rules.json
 ```
 
 **Configure credentials:**
+
 ```bash
 # Copy example
 cp configs/mcp-servers-keyring.json.example configs/mcp-servers-keyring.json
@@ -134,6 +137,7 @@ ENHANCEMENT_CONFIG_PATH=/custom/path/enhancement-rules.json uvicorn router.main:
 ## Best Practices
 
 ### Version Control
+
 ```bash
 # Track AgentHub configs
 git add configs/enhancement-rules.json
@@ -144,6 +148,7 @@ echo "configs/clients/*/local-*.json" >> .gitignore
 ```
 
 ### Secrets Management
+
 ```bash
 # Never commit credentials
 git add configs/mcp-servers-keyring.json.example  # Example only
@@ -151,6 +156,7 @@ echo "configs/mcp-servers-keyring.json" >> .gitignore  # Actual secrets
 ```
 
 ### Backup
+
 ```bash
 # Backup all configs
 tar -czf agenthub-configs-$(date +%Y%m%d).tar.gz configs/
