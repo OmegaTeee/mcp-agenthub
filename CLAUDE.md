@@ -98,7 +98,9 @@ POST /pipelines/documentation   Generate docs from codebase
 **Security Score: 9.0/10** - Production-grade audit infrastructure with compliance-ready logging.
 
 ### Structured Audit Logging
+
 All security-relevant operations are logged with structured JSON:
+
 ```python
 from router.audit import audit_admin_action, audit_credential_access
 
@@ -110,13 +112,17 @@ audit_credential_access(action="get", credential_key="api_key", status="success"
 ```
 
 ### Audit Context Propagation
+
 Context is automatically captured via middleware using `contextvars`:
+
 - `request_id` - UUID for request correlation
 - `client_id` - From X-Client-ID header
 - `client_ip` - Remote IP address (respects X-Forwarded-For)
 
 ### Security Alerts
+
 Real-time anomaly detection integrated into audit events:
+
 - Repeated failures (3+ in 5 min)
 - Excessive credential access (5+ in 1 min)
 - Credential probing attempts
@@ -125,12 +131,26 @@ Real-time anomaly detection integrated into audit events:
 Alerts are automatically checked on every audit event.
 
 ### Persistent Activity Log
+
 SQLite-backed activity log stores HTTP request history with full audit context.
 Query API: `GET /audit/activity?client_id=admin&limit=50`
 
 ### Documentation
+
 - **User Guides**: `guides/` - Setup, configuration, integrations
 - **Developer Docs**: `docs/` - Architecture, audit system, security
 - **Audit Implementation**: `docs/audit/AUDIT-IMPLEMENTATION-COMPLETE.md`
 
 For detailed audit system documentation, see `docs/audit/`
+
+## Steering Documents
+
+Steering documents guide AI agents with project-specific conventions and patterns. These documents are located in `.claude/steering/`:
+
+| Document | Purpose | Path |
+|----------|---------|------|
+| **product.md** | Product purpose, value proposition, key features, business rules, request lifecycle | `.claude/steering/product.md` |
+| **tech.md** | Tech stack, frameworks, build system, common commands, code style requirements | `.claude/steering/tech.md` |
+| **structure.md** | Directory organization, file naming patterns, module responsibilities, request flow | `.claude/steering/structure.md` |
+
+These documents provide focused guidance for AI agents working on this codebase and should be referenced during onboarding and complex tasks.

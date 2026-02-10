@@ -2,10 +2,12 @@
   "folders": [
     {
       "path": ".",
-    },
+    }
   ],
   "settings": {
-    "python.experiments.optOutFrom": ["pythonTerminalEnvVarActivation"],
+    "python.experiments.optOutFrom": [
+      "pythonTerminalEnvVarActivation"
+    ],
     "chat.tools.terminal.autoApprove": {
       "/^python3 -m pytest -q$/": {
         "approve": true,
@@ -20,5 +22,5 @@
         "matchCommandLine": true,
       },
     },
-  },
+  }
 }

@@ -18,6 +18,7 @@ This guide provides **step-by-step testing procedures** to verify that each clie
 
 ---
 
+
 ## Prerequisites
 
 Before running tests, ensure:
@@ -796,12 +797,12 @@ curl http://localhost:9090/audit/activity?limit=3 | jq -r '.[] | .timestamp'
 
 **Benchmark Queries:**
 
-| Query Type | Expected Time (First) | Expected Time (Cached) |
-|------------|---------------------|---------------------|
-| Context7 doc lookup | < 3s | < 500ms |
-| Desktop Commander file list | < 2s | < 100ms |
-| Sequential thinking | < 5s | < 1s |
-| Memory recall | < 1s | < 50ms |
+| Query Type                  | Expected Time (First) | Expected Time (Cached) |
+| --------------------------- | --------------------- | ---------------------- |
+| Context7 doc lookup         | < 3s                  | < 500ms                |
+| Desktop Commander file list | < 2s                  | < 100ms                |
+| Sequential thinking         | < 5s                  | < 1s                   |
+| Memory recall               | < 1s                  | < 50ms                 |
 
 **Measurement:**
 
@@ -1096,14 +1097,14 @@ CI Status: [![Tests](https://github.com/your-org/agenthub/workflows/Tests/badge.
 
 ### Key Differences: Manual vs Automated Tests
 
-| Aspect | Manual Tests | Automated Tests |
-|--------|-------------|-----------------|
-| **Coverage** | Full user workflows | API/HTTP endpoints |
-| **Speed** | Slow (hours) | Fast (seconds) |
-| **Client UI** | Tests actual client UX | Tests integration layer only |
-| **Enhancement** | Sees enhanced prompts | Tests enhancement routing |
-| **Debugging** | User-facing errors | Low-level assertions |
-| **When to Use** | Pre-release validation | Development & CI/CD |
+| Aspect          | Manual Tests           | Automated Tests              |
+| --------------- | ---------------------- | ---------------------------- |
+| **Coverage**    | Full user workflows    | API/HTTP endpoints           |
+| **Speed**       | Slow (hours)           | Fast (seconds)               |
+| **Client UI**   | Tests actual client UX | Tests integration layer only |
+| **Enhancement** | Sees enhanced prompts  | Tests enhancement routing    |
+| **Debugging**   | User-facing errors     | Low-level assertions         |
+| **When to Use** | Pre-release validation | Development & CI/CD          |
 
 **Recommendation:** Use both! Automated tests catch regressions quickly during development. Manual tests validate the complete user experience before major releases.
 
